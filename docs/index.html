@@ -5,61 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Habit Tracker</title>
 </head>
-<body style="max-width: 650px; margin: 40px auto; padding: 0 10px; font: 18px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #444; background-color: #fafafa;">
-    <header>
-        <h1 style="color: #111;">Habit Tracker</h1>
-        <p>A simple, distraction-free Android application for tracking daily habits.</p>
+<body style="max-width: 650px; margin: 40px auto; padding: 0 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6;">
+    <header style="margin-bottom: 40px; text-align: center;">
+        <h1 style="font-size: 2.5em; margin-bottom: 10px;">Habit Tracker</h1>
+        <p style="font-size: 1.2em;">A simple, distraction-free Android application for tracking daily habits.</p>
+        <div style="margin-top: 30px;">
+            <a href="https://github.com/agrawal-d/habits/releases/download/latest-build/habits-tracker-latest.apk" style="font-weight: bold; font-size: 1.3em; text-decoration: underline;">
+                Download Latest APK
+            </a>
+        </div>
     </header>
 
-    <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+    <hr style="border: 0; border-top: 1px solid #ccc; margin: 30px 0;">
 
     <main>
-        <section>
-            <h2 style="color: #111;">Get the App</h2>
-            <p>You can download the latest production version of the app directly using the link below:</p>
-            <p>
-                <a href="https://github.com/agrawal-d/habits/releases/download/latest-build/habits-tracker-latest.apk" style="font-weight: bold; font-size: 20px; color: #0066cc; text-decoration: underline;">
-                    Download Habit Tracker APK
-                </a>
-            </p>
-        </section>
-
-        <section>
-            <h2 style="color: #111;">Screenshots</h2>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                <img src="screenshots/1.jpeg" alt="Screenshot 1" style="width: 200px; border: 1px solid #ddd; border-radius: 4px;" />
-                <img src="screenshots/2.jpeg" alt="Screenshot 2" style="width: 200px; border: 1px solid #ddd; border-radius: 4px;" />
-                <img src="screenshots/3.jpeg" alt="Screenshot 3" style="width: 200px; border: 1px solid #ddd; border-radius: 4px;" />
+        <section style="margin-bottom: 40px;">
+            <h2>Screenshots</h2>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <img src="screenshots/1.jpeg" alt="Screenshot 1" style="width: 190px; border: 1px solid #ccc;" />
+                <img src="screenshots/2.jpeg" alt="Screenshot 2" style="width: 190px; border: 1px solid #ccc;" />
+                <img src="screenshots/3.jpeg" alt="Screenshot 3" style="width: 190px; border: 1px solid #ccc;" />
             </div>
         </section>
 
-        <section>
-            <h2 style="color: #111;">Features</h2>
+        <section style="margin-bottom: 40px;">
+            <h2>Features</h2>
             <ul>
                 <li><strong>Daily Reminders</strong>: Receive daily check-in notifications.</li>
                 <li><strong>Easy Logging</strong>: Mark habits as yes, no, or partially complete.</li>
                 <li><strong>Backup & Restore</strong>: Easily backup and restore your habit data.</li>
             </ul>
         </section>
-        
-        <section>
-            <h2 style="color: #111;">Formatting</h2>
-            <p>This project uses <strong>ktlint</strong> for code formatting.</p>
-            <ul>
-                <li>Format Code: <code>./gradlew ktlintFormat</code></li>
-                <li>Check Formatting: <code>./gradlew ktlintCheck</code></li>
-            </ul>
-        </section>
     </main>
 
     <hr style="border: 0; border-top: 1px solid #ccc; margin: 30px 0;">
 
-    <footer>
-        <h2 style="color: #111;">License</h2>
-        <p>Copyright (C) 2019 - Present Divyanshu Agrawal</p>
-        <p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p>
-        <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
-        <p>You should have received a copy of the GNU General Public License along with this program. If not, see <a href="https://www.gnu.org/licenses/" style="color: #0066cc;">https://www.gnu.org/licenses/</a>.</p>
+    <footer style="text-align: center; font-size: 0.9em; margin-top: 40px;">
+        <p>Divyanshu Agrawal &copy; 2019 - Present | GNU GPLv3</p>
     </footer>
 </body>
 </html>
