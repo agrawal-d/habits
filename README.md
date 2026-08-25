@@ -3,17 +3,9 @@
 A simple, distraction-free Android application for tracking daily habits.
 
 ## Features
-- **Daily Reminders**: Set a daily reminder time for check-ins.
-- **Easy Questionnaire**: Answer yes, no, or partially to configured habits.
-- **Sentiment Indicators**: Track status using visual icons (trophy, neutral face, sad face) and rolling 7-day logs.
-- **Safe Area & Notch Compatibility**: Fully optimized layout preserving system notch bounds.
-- **Backup & Restore**: Create local timestamped backup files (.json) and restore from them.
-
-## Development & Builds
-Built using **Kotlin**, **Jetpack Compose (Material 3)**, and **Gradle**.
-
-- **Debug Build**: `./gradlew assembleDebug`
-- **Release Build**: `./gradlew assembleRelease`
+- **Daily Reminders**: Receive daily check-in notifications.
+- **Easy Logging**: Mark habits as yes, no, or partially complete.
+- **Backup & Restore**: Easily backup and restore your habit data.
 
 ## License
 
