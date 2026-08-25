@@ -1,5 +1,9 @@
 package com.avantgardelabs.healthyhabitstracker.ui
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,7 +39,8 @@ import androidx.compose.ui.platform.LocalDensity
 fun OnboardingScreen(
     notificationsEnabled: Boolean,
     onRequestNotificationPermission: () -> Unit,
-    onFinished: (List<Question>, hour: Int, minute: Int) -> Unit
+    onFinished: (List<Question>, hour: Int, minute: Int) -> Unit,
+    onRestoreBackup: (String) -> Boolean
 ) {
     var pageIndex by remember { mutableStateOf(0) }
     
@@ -53,6 +58,27 @@ fun OnboardingScreen(
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
+    // Launcher for file import (restore backup) during onboarding
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val json = inputStream.bufferedReader().use { it.readText() }
+                    val success = onRestoreBackup(json)
+                    if (success) {
+                        Toast.makeText(context, "Backup restored successfully!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "ERROR: Invalid JSON structure", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to read file: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -126,6 +152,24 @@ fun OnboardingScreen(
                             .height(48.dp)
                     ) {
                         Text("Get Started", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            filePickerLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Text("Restore Backup", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
                     }
                 }
                 1 -> {
