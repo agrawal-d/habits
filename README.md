@@ -4,9 +4,8 @@ A simple, distraction-free Android application for tracking daily habits.
 
 [![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/agrawal-d/habits/releases/download/latest-build/habits-tracker-latest.apk)
 
-| | | |
-|:---:|:---:|:---:|
 | <img src="docs/screenshots/1.jpeg" width="250" /> | <img src="docs/screenshots/2.jpeg" width="250" /> | <img src="docs/screenshots/3.jpeg" width="250" /> |
+|:---:|:---:|:---:|
 
 ## Features
 - **Daily Reminders**: Receive daily check-in notifications.
@@ -21,7 +20,7 @@ This project uses **ktlint** for code formatting.
 
 ## License
 
-Copyright (C) 2019 - Present Divyanshu Agrawal
+Copyright (C) 2026 - Present Divyanshu Agrawal
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

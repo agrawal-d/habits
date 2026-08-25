@@ -1277,6 +1277,36 @@ fun SettingsScreen(
             }
         }
 
+        // Section: Report a Bug Button
+        item {
+            Spacer(modifier = Modifier.height(10.dp))
+            Button(
+                onClick = {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/agrawal-d/habits/issues"))
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Cannot open issues page", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth().height(44.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.BugReport,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Report Bug", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
         // Section: Reset App Data (Simple plain button directly in item, no outer card box or text)
         item {
             Spacer(modifier = Modifier.height(10.dp))
