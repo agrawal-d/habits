@@ -6,7 +6,7 @@ A simple, distraction-free Android application for tracking daily habits.
 
 | | | |
 |:---:|:---:|:---:|
-| <img src="screenshots/1.jpeg" width="250" /> | <img src="screenshots/2.jpeg" width="250" /> | <img src="screenshots/3.jpeg" width="250" /> |
+| <img src="docs/screenshots/1.jpeg" width="250" /> | <img src="docs/screenshots/2.jpeg" width="250" /> | <img src="docs/screenshots/3.jpeg" width="250" /> |
 
 ## Features
 - **Daily Reminders**: Receive daily check-in notifications.
