@@ -7,6 +7,12 @@ A simple, distraction-free Android application for tracking daily habits.
 - **Easy Logging**: Mark habits as yes, no, or partially complete.
 - **Backup & Restore**: Easily backup and restore your habit data.
 
+## Formatting
+This project uses **ktlint** for code formatting.
+
+- **Format Code**: `./gradlew ktlintFormat`
+- **Check Formatting**: `./gradlew ktlintCheck`
+
 ## License
 
 Copyright (C) 2019 - Present Divyanshu Agrawal
