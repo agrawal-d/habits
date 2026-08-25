@@ -2,6 +2,8 @@
 
 A simple, distraction-free Android application for tracking daily habits.
 
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/agrawal-d/habits/releases/download/latest-build/habits-tracker-latest.apk)
+
 | | | |
 |:---:|:---:|:---:|
 | <img src="screenshots/1.jpeg" width="250" /> | <img src="screenshots/2.jpeg" width="250" /> | <img src="screenshots/3.jpeg" width="250" /> |

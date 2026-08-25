@@ -36,6 +36,7 @@ jobs:
         run: |
           commit_sha=$(git rev-parse --short HEAD)
           cp app/build/outputs/apk/release/app-release.apk habits-tracker-$commit_sha.apk
+          cp app/build/outputs/apk/release/app-release.apk habits-tracker-latest.apk
           echo "COMMIT_SHA=$commit_sha" >> $GITHUB_ENV
 
       - name: Update GitHub Release
@@ -60,8 +61,8 @@ jobs:
             echo "No existing assets found."
           fi
 
-          echo "Uploading new APK asset..."
-          gh release upload latest-build habits-tracker-${{ env.COMMIT_SHA }}.apk
+          echo "Uploading new APK assets..."
+          gh release upload latest-build habits-tracker-${{ env.COMMIT_SHA }}.apk habits-tracker-latest.apk
 
           echo "Updating release description with commit details..."
           commit_msg=$(git log -1 --pretty=%B | head -n 1)
