@@ -54,15 +54,7 @@ class EditQuestionsActivity : ComponentActivity() {
         dataManager = DataManager(applicationContext)
 
         setContent {
-            val themeName = dataManager.habitData.theme
-            val themeColor = when (themeName) {
-                "orange" -> Color(0xFFFF6600)
-                "slate" -> Color(0xFF455A64)
-                "blue" -> Color(0xFF1565C0)
-                else -> Color(0xFF1B5E20) // default green
-            }
-
-            HealthyHabitsTrackerTheme(primaryColor = themeColor) {
+            HealthyHabitsTrackerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -85,10 +77,28 @@ fun EditQuestionsContent(
     val context = LocalContext.current
 
     var editingQuestion by remember { mutableStateOf<Question?>(null) }
+    var isAddingQuestion by remember { mutableStateOf(false) }
+
+    if (isAddingQuestion) {
+        EditQuestionScreen(
+            question = Question(text = "", icon = "star"),
+            title = "Add Habit Question",
+            onSave = { newQuestion ->
+                dataManager.addQuestion(newQuestion)
+                isAddingQuestion = false
+                Toast.makeText(context, "Habit added", Toast.LENGTH_SHORT).show()
+            },
+            onCancel = {
+                isAddingQuestion = false
+            }
+        )
+        return
+    }
 
     if (editingQuestion != null) {
         EditQuestionScreen(
             question = editingQuestion!!,
+            title = "Edit Habit Question",
             onSave = { updated ->
                 dataManager.updateQuestion(updated)
                 editingQuestion = null
@@ -101,226 +111,145 @@ fun EditQuestionsContent(
         return
     }
 
-    var addModeText by remember { mutableStateOf("") }
-    var addModeIcon by remember { mutableStateOf("star") }
-    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
+    val questions = dataManager.habitData.questions
 
-    Column(
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
-            .imePadding()
-            .padding(horizontal = 16.dp)
-    ) {
-        // Standard Material 3 Header Bar with Back button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Text(
-                text = "Habit Questions",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                ),
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Create box
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            .navigationBarsPadding(),
+        containerColor = Color(0xFFECEFF1),
+        topBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                shadowElevation = 4.dp
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = "Habit Questions",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = Color.White
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 6.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Button(
+                        onClick = { isAddingQuestion = true },
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "ADD HABIT",
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Add Habit Question",
+                    text = "Active Questions (${questions.size})",
                     style = TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFF263238)
                     )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Level 1: Icon Selector
-                Text(
-                    text = "Select Habit Icon",
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Scrollable row of icons
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    IconMapper.availableIcons.forEach { pair ->
-                        val name = pair.first
-                        val vector = pair.second
-                        val isSelected = addModeIcon == name
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .border(
-                                    1.dp,
-                                    if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .clickable { addModeIcon = name },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = vector,
-                                contentDescription = name,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Level 2: Description
-                Text(
-                    text = "Question Description",
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                        .background(Color.White, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (addModeText.isEmpty()) {
-                        Text(
-                            text = "e.g. Ate healthy breakfast today",
-                            style = TextStyle(color = Color.Gray, fontSize = 13.sp)
-                        )
-                    }
-                    BasicTextField(
-                        value = addModeText,
-                        onValueChange = { addModeText = it },
-                        textStyle = TextStyle(color = Color.Black, fontSize = 13.sp),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        val text = addModeText.trim()
-                        if (text.isNotEmpty()) {
-                            dataManager.addQuestion(Question(text = text, icon = addModeIcon))
-                            addModeText = ""
-                            keyboardController?.hide()
-                            Toast.makeText(context, "Habit added", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Please enter question description", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(44.dp)
-                ) {
-                    Text(
-                        text = "Add Habit",
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                }
+                Spacer(modifier = Modifier.height(2.dp))
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Active Questions (${dataManager.habitData.questions.size})",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Questions List
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val questions = dataManager.habitData.questions
             if (questions.isEmpty()) {
                 item {
-                    Box(
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(top = 24.dp),
+                        shape = RoundedCornerShape(4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Text(
-                            "No questions configured yet.",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 13.sp,
-                                color = Color.Gray
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No habit questions configured yet.\nTap \"ADD HABIT\" below to create your first habit.",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 14.sp,
+                                    color = Color.Gray,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    lineHeight = 20.sp
+                                )
                             )
-                        )
+                        }
                     }
                 }
             } else {
-                itemsIndexed(questions) { idx, question ->
+                itemsIndexed(questions, key = { _, q -> q.id }) { idx, question ->
                     val isDraggingThis = draggedIndex == idx
                     val translationY = if (isDraggingThis) dragOffset else 0f
 
@@ -372,9 +301,9 @@ fun EditQuestionsContent(
                                     }
                                 )
                             },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                        shape = RoundedCornerShape(4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -393,7 +322,7 @@ fun EditQuestionsContent(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        Color(0xFFE3F2FD),
                                         RoundedCornerShape(8.dp)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -401,7 +330,7 @@ fun EditQuestionsContent(
                                 Icon(
                                     imageVector = IconMapper.getIconByName(question.icon),
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = Color(0xFF1976D2),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -410,8 +339,9 @@ fun EditQuestionsContent(
                                 text = question.text,
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.onBackground
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF263238)
                                 ),
                                 modifier = Modifier.weight(1f)
                             )
@@ -423,7 +353,7 @@ fun EditQuestionsContent(
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit Question",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = Color(0xFF1976D2),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -438,13 +368,17 @@ fun EditQuestionsContent(
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "Delete Question",
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                    tint = Color(0xFFF44336),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
                     }
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

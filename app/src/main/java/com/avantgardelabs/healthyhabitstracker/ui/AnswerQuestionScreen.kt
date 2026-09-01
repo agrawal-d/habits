@@ -59,96 +59,112 @@ fun AnswerQuestionScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
+            .navigationBarsPadding()
             .imePadding(),
+        containerColor = Color(0xFFECEFF1),
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                shadowElevation = 4.dp
             ) {
-                IconButton(
-                    onClick = onCancel,
-                    modifier = Modifier.size(48.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = formattedDate,
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.onBackground
+                    IconButton(
+                        onClick = onCancel,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
                         )
-                    )
-                    val answeredCount = questions.count { answers.containsKey(it.id) }
-                    Text(
-                        text = "$answeredCount of ${questions.size} answered",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = formattedDate,
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = Color.White
+                            )
                         )
-                    )
+                        val answeredCount = questions.count { answers.containsKey(it.id) }
+                        Text(
+                            text = "$answeredCount of ${questions.size} answered",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        )
+                    }
                 }
             }
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 4.dp
             ) {
-                OutlinedButton(
-                    onClick = onCancel,
-                    shape = RoundedCornerShape(12.dp),
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Cancel",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
+                    OutlinedButton(
+                        onClick = onCancel,
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
                         )
-                    )
-                }
+                    }
 
-                Button(
-                    onClick = {
-                        if (isAllAnswered) {
-                            onSave(answers.toMap(), note)
-                        }
-                    },
-                    enabled = isAllAnswered,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                ) {
-                    Text(
-                        text = "Save",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                    Button(
+                        onClick = {
+                            if (isAllAnswered) {
+                                onSave(answers.toMap(), note)
+                            }
+                        },
+                        enabled = isAllAnswered,
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    ) {
+                        Text(
+                            text = "Save",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -158,19 +174,16 @@ fun AnswerQuestionScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 // Unified Questions Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant
-                    )
+                    shape = RoundedCornerShape(4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         questions.forEachIndexed { index, question ->
@@ -221,13 +234,6 @@ fun AnswerQuestionScreen(
                                     onSelect = { answers[question.id] = it }
                                 )
                             }
-
-                            if (index < questions.size - 1) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                )
-                            }
                         }
                     }
                 }
@@ -255,12 +261,12 @@ fun AnswerQuestionScreen(
                         fontSize = 13.sp,
                         fontFamily = FontFamily.SansSerif
                     ),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(4.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedBorderColor = Color(0xFFCFD8DC),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -275,9 +281,9 @@ fun SegmentedAnswerRow(
     onSelect: (AnswerType) -> Unit
 ) {
     val options = listOf(
-        Triple(AnswerType.YES, "Yes", Color(0xFF2E7D32)),
-        Triple(AnswerType.PARTIAL, "Partially", Color(0xFFE65100)),
-        Triple(AnswerType.NO, "No", Color(0xFF455A64))
+        Triple(AnswerType.YES, "Yes", Color(0xFF4CAF50)),
+        Triple(AnswerType.PARTIAL, "Partially", Color(0xFFFF9800)),
+        Triple(AnswerType.NO, "No", Color(0xFFF44336))
     )
 
     Row(
@@ -285,31 +291,24 @@ fun SegmentedAnswerRow(
             .fillMaxWidth()
             .height(40.dp)
             .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                RoundedCornerShape(20.dp)
+                Color(0xFFECEFF1),
+                RoundedCornerShape(4.dp)
             )
             .border(
                 1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                RoundedCornerShape(20.dp)
+                Color(0xFFCFD8DC),
+                RoundedCornerShape(4.dp)
             )
             .padding(2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        options.forEachIndexed { idx, (type, label, accentColor) ->
+        options.forEachIndexed { idx, (type, label, solidColor) ->
             val isSelected = selectedAnswer == type
 
-            val (bgModifier, textColor) = if (isSelected) {
-                val containerColor = when (type) {
-                    AnswerType.YES -> Color(0xFFE8F5E9)
-                    AnswerType.PARTIAL -> Color(0xFFFFF3E0)
-                    AnswerType.NO -> Color(0xFFECEFF1)
-                }
-                Modifier
-                    .background(containerColor, RoundedCornerShape(18.dp))
-                    .border(1.dp, accentColor.copy(alpha = 0.4f), RoundedCornerShape(18.dp)) to accentColor
+            val bgModifier = if (isSelected) {
+                Modifier.background(solidColor, RoundedCornerShape(4.dp))
             } else {
-                Modifier to Color.Gray
+                Modifier
             }
 
             Box(
@@ -324,9 +323,9 @@ fun SegmentedAnswerRow(
                     text = label,
                     style = TextStyle(
                         fontFamily = FontFamily.SansSerif,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
-                        color = textColor
+                        color = if (isSelected) Color.White else Color(0xFF546E7A)
                     )
                 )
             }
@@ -335,8 +334,8 @@ fun SegmentedAnswerRow(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(16.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
+                        .height(18.dp)
+                        .background(Color(0xFFCFD8DC))
                 )
             }
         }

@@ -41,15 +41,7 @@ class MainActivity : ComponentActivity() {
         currentIntent.value = intent
 
         setContent {
-            val themeName = dataManager.habitData.theme
-            val themeColor = when (themeName) {
-                "orange" -> Color(0xFFFF6600)
-                "slate" -> Color(0xFF455A64)
-                "blue" -> Color(0xFF1565C0)
-                else -> Color(0xFF1B5E20) // default green
-            }
-
-            HealthyHabitsTrackerTheme(primaryColor = themeColor) {
+            HealthyHabitsTrackerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val context = LocalContext.current
                     val lifecycleOwner = LocalLifecycleOwner.current

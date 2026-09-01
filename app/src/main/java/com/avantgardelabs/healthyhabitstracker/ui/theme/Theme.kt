@@ -1,62 +1,65 @@
 package com.avantgardelabs.healthyhabitstracker.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import android.app.Activity
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFFF6600), // Hacker News Orange
-    onPrimary = Color.White,
-    background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
-    onBackground = Color(0xFFE0E0E0),
-    onSurface = Color(0xFFE0E0E0),
-    outline = Color(0xFF333333)
-)
+// Classic Material Design 1.0 Palette (inspired by 1.png and 2.png)
+val MaterialBlue500 = Color(0xFF2196F3)
+val MaterialBlue700 = Color(0xFF1976D2)
+val MaterialBlue900 = Color(0xFF0D47A1)
+val MaterialLightGrayCanvas = Color(0xFFECEFF1)
+val MaterialCardWhite = Color(0xFFFFFFFF)
+val MaterialTextDark = Color(0xFF263238)
+val MaterialTextSecondary = Color(0xFF546E7A)
+val MaterialDividerColor = Color(0xFFCFD8DC)
 
-private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFFFF6600), // Hacker News Orange
+val MaterialGreen500 = Color(0xFF4CAF50)
+val MaterialAmber500 = Color(0xFFFF9800)
+val MaterialRed500 = Color(0xFFF44336)
+
+private val ClassicMaterial1ColorScheme = lightColorScheme(
+    primary = MaterialBlue500,
     onPrimary = Color.White,
-    background = Color(0xFFF6F6EF), // Hacker News Off-white
-    surface = Color(0xFFF6F6EF),
-    onBackground = Color(0xFF1A1A1A),
-    onSurface = Color(0xFF1A1A1A),
-    outline = Color(0xFFCCCCCC)
+    primaryContainer = MaterialBlue700,
+    onPrimaryContainer = Color.White,
+    secondary = MaterialBlue700,
+    onSecondary = Color.White,
+    background = MaterialLightGrayCanvas,
+    onBackground = MaterialTextDark,
+    surface = MaterialCardWhite,
+    onSurface = MaterialTextDark,
+    surfaceTint = Color.Transparent,
+    surfaceVariant = Color(0xFFF5F7FA),
+    onSurfaceVariant = MaterialTextSecondary,
+    outline = MaterialDividerColor,
+    outlineVariant = Color(0xFFE0E0E0),
+    error = MaterialRed500,
+    onError = Color.White
 )
 
 @Composable
 fun HealthyHabitsTrackerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    primaryColor: Color = Color(0xFF1B5E20), // Default Material Dark Green
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        darkColorScheme(
-            primary = primaryColor,
-            onPrimary = Color.White,
-            background = Color(0xFF121212),
-            surface = Color(0xFF1E1E1E),
-            onBackground = Color(0xFFE0E0E0),
-            onSurface = Color(0xFFE0E0E0),
-            outline = Color(0xFF333333)
-        )
-    } else {
-        lightColorScheme(
-            primary = primaryColor,
-            onPrimary = Color.White,
-            background = Color(0xFFF6F6EF), // Warm Hacker News style flat background
-            surface = Color(0xFFF6F6EF),
-            onBackground = Color(0xFF1A1A1A),
-            onSurface = Color(0xFF1A1A1A),
-            outline = Color(0xFFCCCCCC)
-        )
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = false
+            }
+        }
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = ClassicMaterial1ColorScheme,
         typography = Typography,
         content = content
     )

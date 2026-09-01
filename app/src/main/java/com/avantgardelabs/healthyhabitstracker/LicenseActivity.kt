@@ -38,15 +38,7 @@ class LicenseActivity : ComponentActivity() {
         dataManager = DataManager(applicationContext)
 
         setContent {
-            val themeName = dataManager.habitData.theme
-            val themeColor = when (themeName) {
-                "orange" -> Color(0xFFFF6600)
-                "slate" -> Color(0xFF455A64)
-                "blue" -> Color(0xFF1565C0)
-                else -> Color(0xFF1B5E20)
-            }
-
-            HealthyHabitsTrackerTheme(primaryColor = themeColor) {
+            HealthyHabitsTrackerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color.White
@@ -72,35 +64,43 @@ fun LicenseContent(onBack: () -> Unit) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding(),
+            .navigationBarsPadding(),
         containerColor = Color.White,
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                shadowElevation = 4.dp
             ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.size(48.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "License",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = Color.White
+                        )
                     )
                 }
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "License",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color.Black
-                    )
-                )
             }
         }
     ) { innerPadding ->

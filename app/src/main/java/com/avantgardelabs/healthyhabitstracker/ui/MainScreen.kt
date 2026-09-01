@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -37,12 +39,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.avantgardelabs.healthyhabitstracker.BuildConfig
 import com.avantgardelabs.healthyhabitstracker.EditQuestionsActivity
+import com.avantgardelabs.healthyhabitstracker.R
 import com.avantgardelabs.healthyhabitstracker.data.AnswerType
 import com.avantgardelabs.healthyhabitstracker.data.DataManager
 import com.avantgardelabs.healthyhabitstracker.data.LogEntry
 import com.avantgardelabs.healthyhabitstracker.data.ReminderScheduler
 import com.avantgardelabs.healthyhabitstracker.data.ReminderSettings
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
@@ -54,6 +58,15 @@ data class DaySummary(
     val isYesterday: Boolean,
     val log: LogEntry?
 )
+
+fun getSentimentIconAndColor(score: Int?): Pair<ImageVector, Color> {
+    return when {
+        score == null -> Icons.Default.SentimentNeutral to Color.Gray
+        score >= 70 -> Icons.Default.SentimentSatisfied to Color(0xFF4CAF50)
+        score >= 40 -> Icons.Default.SentimentNeutral to Color(0xFFFF9800)
+        else -> Icons.Default.SentimentDissatisfied to Color(0xFFF44336)
+    }
+}
 
 @Composable
 fun ScoreBadge(
@@ -131,7 +144,7 @@ fun StatusIcon(
 }
 
 enum class Tab {
-    HOME, LOG, SETTINGS
+    HOME, LOG, SETTINGS, REMINDER
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -152,7 +165,7 @@ fun MainScreen(
     }
 
     BackHandler(enabled = editingDate == null && currentTab != Tab.HOME) {
-        currentTab = Tab.HOME
+        currentTab = if (currentTab == Tab.REMINDER) Tab.SETTINGS else Tab.HOME
     }
 
     // If editingDate is set, show the questionnaire screen
@@ -190,19 +203,25 @@ fun MainScreen(
     if (deleteConfirmDate != null) {
         AlertDialog(
             onDismissRequest = { deleteConfirmDate = null },
+            shape = RoundedCornerShape(4.dp),
+            containerColor = Color.White,
+            tonalElevation = 0.dp,
             title = {
                 Text(
                     "Delete Entry?",
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 18.sp,
+                    color = Color(0xFF212121)
                 )
             },
             text = {
                 Text(
-                    "Are you sure you want to delete the log for ${deleteConfirmDate}?",
+                    "Are you sure you want to delete the log for $deleteConfirmDate?",
                     fontFamily = FontFamily.SansSerif,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    color = Color(0xFF546E7A),
+                    lineHeight = 20.sp
                 )
             },
             confirmButton = {
@@ -213,54 +232,76 @@ fun MainScreen(
                         Toast.makeText(context, "Entry deleted", Toast.LENGTH_SHORT).show()
                     }
                 ) {
-                    Text("Delete", color = Color.Gray, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
+                    Text("DELETE", color = Color(0xFFD32F2F), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deleteConfirmDate = null }) {
-                    Text("Cancel", color = Color.Gray, fontFamily = FontFamily.SansSerif)
+                    Text("CANCEL", color = Color(0xFF1976D2), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
                 }
-            },
-            shape = RoundedCornerShape(8.dp)
+            }
         )
     }
 
     // Main layout
     Scaffold(
-        bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+        topBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                shadowElevation = 4.dp
             ) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp),
+                        .statusBarsPadding()
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TabItemWithIcon(
-                        label = "Home",
-                        icon = Icons.Default.Home,
-                        isSelected = currentTab == Tab.HOME,
-                        onClick = { currentTab = Tab.HOME },
-                        modifier = Modifier.weight(1f)
-                    )
-                    TabItemWithIcon(
-                        label = "History",
-                        icon = Icons.AutoMirrored.Filled.List,
-                        isSelected = currentTab == Tab.LOG,
-                        onClick = { currentTab = Tab.LOG },
-                        modifier = Modifier.weight(1f)
-                    )
-                    TabItemWithIcon(
-                        label = "Settings",
-                        icon = Icons.Default.Settings,
-                        isSelected = currentTab == Tab.SETTINGS,
-                        onClick = { currentTab = Tab.SETTINGS },
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (currentTab != Tab.HOME) {
+                            IconButton(onClick = {
+                                currentTab = if (currentTab == Tab.REMINDER) Tab.SETTINGS else Tab.HOME
+                            }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color.White
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+
+                        Text(
+                            text = when (currentTab) {
+                                Tab.HOME -> "Habits"
+                                Tab.LOG -> "History"
+                                Tab.SETTINGS -> "Settings"
+                                Tab.REMINDER -> "Daily Reminder"
+                            },
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = Color.White
+                            )
+                        )
+                    }
+
+                    if (currentTab == Tab.HOME) {
+                        IconButton(onClick = { currentTab = Tab.SETTINGS }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = Color.White
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -300,48 +341,18 @@ fun MainScreen(
                         dataManager = dataManager,
                         notificationsEnabled = notificationsEnabled,
                         onRequestNotificationPermission = onRequestNotificationPermission,
+                        onOpenSettings = { openAppSettings(context) },
+                        onOpenReminderSettings = { currentTab = Tab.REMINDER }
+                    )
+                }
+                Tab.REMINDER -> {
+                    ReminderSettingsScreen(
+                        dataManager = dataManager,
+                        notificationsEnabled = notificationsEnabled,
                         onOpenSettings = { openAppSettings(context) }
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun TabItemWithIcon(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = label,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = 13.sp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
-                )
-            )
         }
     }
 }
@@ -443,6 +454,230 @@ fun NotificationBlockerScreen(
     }
 }
 
+fun formatDisplayDate(date: LocalDate, today: LocalDate = LocalDate.now()): String {
+    val dayOfWeek = date.format(DateTimeFormatter.ofPattern("EEEE", java.util.Locale.ENGLISH))
+    val day = date.dayOfMonth
+    val suffix = when {
+        day in 11..13 -> "th"
+        day % 10 == 1 -> "st"
+        day % 10 == 2 -> "nd"
+        day % 10 == 3 -> "rd"
+        else -> "th"
+    }
+    val dayOrdinal = "$day$suffix"
+    val isCurrentMonth = date.year == today.year && date.month == today.month
+    return if (isCurrentMonth) {
+        "$dayOfWeek $dayOrdinal"
+    } else {
+        val shortMonth = date.format(DateTimeFormatter.ofPattern("MMM", java.util.Locale.ENGLISH))
+        "$dayOfWeek $dayOrdinal $shortMonth"
+    }
+}
+
+// 2. Recent Day Item with expandable note on click
+@Composable
+fun RecentDayItem(
+    day: DaySummary,
+    onAnswerDate: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val score = day.log?.getScaledScore()
+    val (indicatorIcon, indicatorColor) = getSentimentIconAndColor(score)
+
+    val extendedDateStr = remember(day.date) {
+        formatDisplayDate(day.date)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (day.log != null) {
+                    expanded = !expanded
+                } else {
+                    onAnswerDate(day.dateStr)
+                }
+            },
+        shape = RoundedCornerShape(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left: Face with extended date ("Monday 31")
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = indicatorIcon,
+                        contentDescription = null,
+                        tint = indicatorColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Text(
+                        text = extendedDateStr,
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color(0xFF263238)
+                        )
+                    )
+                }
+
+                // Right: Colored bg box with % score in white (bg blue)
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(68.dp)
+                        .background(Color(0xFF2196F3)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (score != null) "$score%" else "—",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    )
+                }
+            }
+
+            if (expanded && day.log != null) {
+                HorizontalDivider(color = Color(0xFFECEFF1))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF9FAFB))
+                        .padding(horizontal = 18.dp, vertical = 16.dp)
+                ) {
+                    day.log.questions.forEachIndexed { qIdx, question ->
+                        if (qIdx > 0) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                        }
+                        val answer = day.log.answers[question.id] ?: AnswerType.NO
+                        val ansText = when (answer) {
+                            AnswerType.YES -> "Yes"
+                            AnswerType.PARTIAL -> "Partially"
+                            AnswerType.NO -> "No"
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(Color(0xFFE3F2FD), RoundedCornerShape(4.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = IconMapper.getIconByName(question.icon),
+                                        contentDescription = null,
+                                        tint = Color(0xFF1976D2),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = question.text,
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.SansSerif,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF263238)
+                                    )
+                                )
+                            }
+                            Text(
+                                text = ansText,
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF546E7A)
+                                )
+                            )
+                        }
+                    }
+
+                    if (day.log.note.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFF1F5F9), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Notes,
+                                contentDescription = null,
+                                tint = Color(0xFF546E7A),
+                                modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = day.log.note,
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF37474F),
+                                    lineHeight = 18.sp
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextButton(
+                            onClick = { onAnswerDate(day.dateStr) },
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = Color(0xFF1976D2)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Edit", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // 2. Home Screen implementation
 @Composable
 fun HomeScreen(
@@ -451,6 +686,8 @@ fun HomeScreen(
     onNavigateToLogs: () -> Unit
 ) {
     val today = LocalDate.now()
+    val todayStr = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val todayLog = dataManager.habitData.logs.firstOrNull { it.date == todayStr }
     val last7Days = remember(dataManager.habitData.logs) {
         (0..6).map { offset ->
             val date = today.minusDays(offset.toLong())
@@ -481,275 +718,210 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Spacer(modifier = Modifier.height(20.dp))
-            // App header title
-            Text(
-                text = "Habits",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // 7-Day Momentum Overview Card with dynamic score-based color & icon (no fluff text)
-            val cardBgColor = when {
-                avgScore == null -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                avgScore >= 80 -> Color(0xFF2E7D32).copy(alpha = 0.12f)
-                avgScore >= 50 -> Color(0xFFF57F17).copy(alpha = 0.12f)
-                else -> Color(0xFF5D4037).copy(alpha = 0.10f)
-            }
-            val cardBorderColor = when {
-                avgScore == null -> MaterialTheme.colorScheme.outlineVariant
-                avgScore >= 80 -> Color(0xFF2E7D32).copy(alpha = 0.35f)
-                avgScore >= 50 -> Color(0xFFF57F17).copy(alpha = 0.35f)
-                else -> Color(0xFF5D4037).copy(alpha = 0.30f)
-            }
-            val statusIcon = when {
-                avgScore == null -> Icons.Default.QueryBuilder
-                avgScore >= 80 -> Icons.Default.EmojiEvents
-                avgScore >= 50 -> Icons.AutoMirrored.Filled.TrendingUp
-                else -> Icons.Default.FitnessCenter
-            }
-            val accentColor = when {
-                avgScore == null -> Color.Gray
-                avgScore >= 80 -> Color(0xFF2E7D32)
-                avgScore >= 50 -> Color(0xFFE65100)
-                else -> Color(0xFF5D4037)
-            }
-
+            // SECTION 1: TODAY'S STATUS / REQUEST
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = cardBgColor),
-                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor)
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .height(IntrinsicSize.Min),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
+                    // Left prominent full-height icon container with padding
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(84.dp)
+                            .background(Color(0xFFFFF9C4)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
+                        Image(
+                            painter = painterResource(id = R.drawable.star),
+                            contentDescription = "Today Habit Star",
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(accentColor.copy(alpha = 0.15f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = statusIcon,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                                .size(52.dp)
+                                .padding(4.dp)
+                        )
+                    }
 
-                        Spacer(modifier = Modifier.width(14.dp))
-
-                        Column {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        if (todayLog == null) {
                             Text(
-                                text = "7-Day Average",
+                                text = "TODAY'S CHECK-IN",
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
-                                    fontSize = 12.sp,
-                                    color = Color.Gray,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF1976D2)
                                 )
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(
-                                    text = if (avgScore != null) "$avgScore" else "—",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = accentColor
-                                    )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = "You haven't logged your habits for today yet.",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF263238),
+                                    lineHeight = 18.sp
                                 )
-                                if (avgScore != null) {
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = { onAnswerDate(todayStr) },
+                                shape = RoundedCornerShape(4.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4CAF50),
+                                    contentColor = Color.White
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(42.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "CHECK IN TODAY",
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
                                     Text(
-                                        text = " / 100",
+                                        text = "TODAY",
                                         style = TextStyle(
                                             fontFamily = FontFamily.SansSerif,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.Gray
-                                        ),
-                                        modifier = Modifier.padding(bottom = 3.dp, start = 2.dp)
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF1976D2)
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${todayLog.getScaledScore()}%",
+                                        style = TextStyle(
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 28.sp,
+                                            color = Color(0xFF0D47A1)
+                                        )
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { onAnswerDate(todayStr) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit today's log",
+                                        tint = Color(0xFF1976D2),
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
                         }
                     }
-
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.padding(start = 12.dp)
-                    ) {
-                        Text(
-                            text = "Logged",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 12.sp,
-                                color = Color.Gray,
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "$loggedCount / 7",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        )
-                        Text(
-                            text = "days",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                        )
-                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            Text(
-                text = "Last 7 Days",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            // SECTION 2: LAST 7 DAYS HEADER
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "LAST 7 DAYS",
+                    style = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF546E7A)
+                    )
                 )
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+                if (avgScore != null) {
+                    Text(
+                        text = "Avg $avgScore%",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF1976D2)
+                        )
+                    )
+                }
+            }
         }
 
-        items(last7Days) { day ->
-            val dateLabel = when {
-                day.isToday -> "Today"
-                day.isYesterday -> "Yesterday"
-                else -> day.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d"))
-            }
+        // Recent days (Image 2 style with right-aligned blue date block)
+        items(last7Days.filter { !it.isToday }) { day ->
+            RecentDayItem(
+                day = day,
+                onAnswerDate = onAnswerDate
+            )
+        }
 
-            Card(
+        // History button below last 7 days logs
+        item {
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(
+                onClick = onNavigateToLogs,
+                shape = RoundedCornerShape(4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onAnswerDate(day.dateStr) },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (day.isToday && day.log == null) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    }
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    width = if (day.isToday && day.log == null) 1.5.dp else 1.dp,
-                    color = if (day.isToday && day.log == null) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                    } else {
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-                    }
-                )
+                    .height(46.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = dateLabel,
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.SemiBold,
-                                fontSize = 15.sp,
-                                color = if (day.isToday && day.log == null) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                        )
-
-                        if (day.log != null) {
-                            val earned = day.log.getAbsoluteScore()
-                            val max = day.log.getMaxScore()
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "$earned / $max pts",
-                                style = TextStyle(
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontSize = 13.sp,
-                                    color = Color.Gray,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            )
-                        } else if (!day.isToday) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Not recorded",
-                                style = TextStyle(
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontSize = 13.sp,
-                                    color = Color.Gray.copy(alpha = 0.7f),
-                                    fontWeight = FontWeight.Normal
-                                )
-                            )
-                        }
-                    }
-
-                    if (day.isToday && day.log == null) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                    RoundedCornerShape(12.dp)
-                                )
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                                    RoundedCornerShape(12.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Add entry",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    } else {
-                        ScoreBadge(score = day.log?.getScaledScore())
-                    }
-                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "VIEW FULL HISTORY",
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
             }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -763,43 +935,110 @@ fun LogScreen(
 ) {
     val logs = dataManager.habitData.logs
 
+    val groupedLogs = remember(logs) {
+        logs.groupBy { entry ->
+            try {
+                YearMonth.from(LocalDate.parse(entry.date))
+            } catch (e: Exception) {
+                YearMonth.now()
+            }
+        }.toSortedMap(compareByDescending { it })
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = "History",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Prominent History Overview Card with full-height route icon on left
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left prominent full-height icon container with padding
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(84.dp)
+                        .background(Color(0xFFE8F5E9)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.route),
+                        contentDescription = "History Route",
+                        modifier = Modifier
+                            .size(56.dp)
+                            .padding(4.dp)
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 18.dp)
+                ) {
+                    Text(
+                        text = "History",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color(0xFF263238)
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${logs.size} total entries",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 13.sp,
+                            color = Color(0xFF546E7A)
+                        )
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
 
         if (logs.isEmpty()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(24.dp),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.route),
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp)
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = "No history yet",
+                        text = "No history recorded yet",
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
-                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
@@ -811,14 +1050,54 @@ fun LogScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(logs) { entry ->
-                    LogHistoryItem(
-                        entry = entry,
-                        onEdit = { onEditEntry(entry.date) },
-                        onDelete = { onDeleteEntry(entry.date) }
-                    )
+                groupedLogs.forEach { (yearMonth, monthEntries) ->
+                    val monthTitle = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+                    val scores = monthEntries.map { it.getScaledScore() }
+                    val raw = scores.sum().toDouble() / scores.size
+                    val monthAvg = (Math.round(raw / 5.0) * 5).toInt()
+
+                    item(key = "header_${yearMonth}") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp, bottom = 2.dp, start = 4.dp, end = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = monthTitle,
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color(0xFF263238)
+                                )
+                            )
+                            Text(
+                                text = "Avg $monthAvg%",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF1976D2)
+                                )
+                            )
+                        }
+                    }
+
+                    items(monthEntries, key = { it.date }) { entry ->
+                        LogHistoryItem(
+                            entry = entry,
+                            onEdit = { onEditEntry(entry.date) },
+                            onDelete = { onDeleteEntry(entry.date) }
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -833,83 +1112,98 @@ fun LogHistoryItem(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val formattedDate = remember(entry.date) {
-        try {
-            val date = LocalDate.parse(entry.date)
-            val today = LocalDate.now()
-            when {
-                date == today -> "Today"
-                date == today.minusDays(1) -> "Yesterday"
-                else -> date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy"))
-            }
-        } catch (e: Exception) {
-            entry.date
-        }
+    val parsedDate = remember(entry.date) {
+        try { LocalDate.parse(entry.date) } catch (e: Exception) { null }
     }
+    val extendedDateStr = remember(entry.date) {
+        parsedDate?.let { formatDisplayDate(it) } ?: entry.date
+    }
+
+    val score = entry.getScaledScore()
+    val (indicatorIcon, indicatorColor) = getSentimentIconAndColor(score)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+        shape = RoundedCornerShape(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .clickable { expanded = !expanded }
-                .padding(horizontal = 18.dp, vertical = 16.dp)
+                .fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = formattedDate,
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                // Left: Face with extended date ("Monday 31")
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = indicatorIcon,
+                        contentDescription = null,
+                        tint = indicatorColor,
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
                     Text(
-                        text = "${entry.getAbsoluteScore()} / ${entry.getMaxScore()} pts",
+                        text = extendedDateStr,
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
-                            fontSize = 13.sp,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color(0xFF263238)
                         )
                     )
                 }
 
-                ScoreBadge(
-                    score = entry.getScaledScore()
-                )
+                // Right: Colored bg box with % score in white (bg blue)
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(68.dp)
+                        .background(Color(0xFF2196F3)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$score%",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    )
+                }
             }
 
             if (expanded) {
-                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider(color = Color(0xFFECEFF1))
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                        .padding(14.dp)
+                        .background(Color(0xFFF9FAFB))
+                        .padding(horizontal = 18.dp, vertical = 16.dp)
                 ) {
-                    entry.questions.forEach { question ->
+                    entry.questions.forEachIndexed { qIdx, question ->
+                        if (qIdx > 0) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                        }
                         val answer = entry.answers[question.id] ?: AnswerType.NO
                         val ansText = when (answer) {
                             AnswerType.YES -> "Yes"
                             AnswerType.PARTIAL -> "Partially"
                             AnswerType.NO -> "No"
-                        }
-                        val ansColor = when (answer) {
-                            AnswerType.YES -> Color(0xFF2E7D32)
-                            AnswerType.PARTIAL -> Color(0xFFF57F17)
-                            AnswerType.NO -> Color(0xFF5D4037)
                         }
 
                         Row(
@@ -923,19 +1217,27 @@ fun LogHistoryItem(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(
-                                    imageVector = IconMapper.getIconByName(question.icon),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(Color(0xFFE3F2FD), RoundedCornerShape(4.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = IconMapper.getIconByName(question.icon),
+                                        contentDescription = null,
+                                        tint = Color(0xFF1976D2),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = question.text,
                                     style = TextStyle(
                                         fontFamily = FontFamily.SansSerif,
                                         fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onBackground
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF263238)
                                     )
                                 )
                             }
@@ -943,27 +1245,43 @@ fun LogHistoryItem(
                                 text = ansText,
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    color = ansColor
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF546E7A)
                                 )
                             )
                         }
                     }
 
                     if (entry.note.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Notes: ${entry.note}",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 13.sp,
-                                color = Color.Gray
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFF1F5F9), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Notes,
+                                contentDescription = null,
+                                tint = Color(0xFF546E7A),
+                                modifier = Modifier.size(16.dp).padding(top = 2.dp)
                             )
-                        )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = entry.note,
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF37474F),
+                                    lineHeight = 18.sp
+                                )
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
                         horizontalArrangement = Arrangement.End,
@@ -972,36 +1290,36 @@ fun LogHistoryItem(
                     ) {
                         TextButton(
                             onClick = onEdit,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(4.dp),
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
+                                contentColor = Color(0xFF1976D2)
                             )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit",
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Edit", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Edit", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         TextButton(
                             onClick = onDelete,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(4.dp),
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
+                                contentColor = Color(0xFFF44336)
                             )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete",
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Delete", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Delete", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }
@@ -1081,19 +1399,18 @@ fun SettingsScreen(
     dataManager: DataManager,
     notificationsEnabled: Boolean,
     onRequestNotificationPermission: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenReminderSettings: () -> Unit
 ) {
     val context = LocalContext.current
 
     // Dialog visibility states
-    var showReminderDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
     var showBackupDialog by remember { mutableStateOf(false) }
     var resetConfirmShow by remember { mutableStateOf(false) }
 
     // Reminder States
     val reminder = dataManager.habitData.reminder
-    var isEnabled by remember(reminder) { mutableStateOf(reminder.enabled) }
+    val isEnabled = reminder.enabled
 
     // Launcher for file import
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -1133,215 +1450,20 @@ fun SettingsScreen(
         }
     }
 
-    // 1. Daily Reminder Dialog
-    if (showReminderDialog) {
-        val amPm = if (reminder.hour >= 12) "PM" else "AM"
-        val displayHour = when {
-            reminder.hour == 0 -> 12
-            reminder.hour > 12 -> reminder.hour - 12
-            else -> reminder.hour
-        }
-        val displayMinute = String.format("%02d", reminder.minute)
-
-        AlertDialog(
-            onDismissRequest = { showReminderDialog = false },
-            title = {
-                Text(
-                    text = "Daily Reminder",
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Reminder Time",
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "$displayHour:$displayMinute $amPm",
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 13.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        TextButton(
-                            onClick = {
-                                val timePicker = TimePickerDialog(
-                                    context,
-                                    { _, h, m ->
-                                        dataManager.updateReminder(ReminderSettings(h, m, isEnabled))
-                                        ReminderScheduler.scheduleReminder(context, h, m, isEnabled)
-                                        Toast.makeText(context, "Reminder time updated", Toast.LENGTH_SHORT).show()
-                                    },
-                                    reminder.hour,
-                                    reminder.minute,
-                                    false
-                                )
-                                timePicker.show()
-                            }
-                        ) {
-                            Text("Change", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Alarm Enabled",
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (isEnabled) "Notifications will arrive daily" else "Alarms are turned off",
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 13.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        Switch(
-                            checked = isEnabled,
-                            onCheckedChange = { checked ->
-                                isEnabled = checked
-                                dataManager.updateReminder(ReminderSettings(reminder.hour, reminder.minute, checked))
-                                ReminderScheduler.scheduleReminder(context, reminder.hour, reminder.minute, checked)
-                                Toast.makeText(
-                                    context,
-                                    if (checked) "Reminder enabled" else "Reminder disabled",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        )
-                    }
-
-                    if (!notificationsEnabled) {
-                        Text(
-                            text = "Notifications are disabled in Android settings. Tap to fix.",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            modifier = Modifier.clickable { onOpenSettings() }
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showReminderDialog = false }) {
-                    Text("Done", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
-                }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-
-    // 2. Theme Dialog
-    if (showThemeDialog) {
-        val themes = listOf(
-            Triple("green", "Green", Color(0xFF1B5E20)),
-            Triple("orange", "Orange", Color(0xFFFF6600)),
-            Triple("slate", "Slate", Color(0xFF455A64)),
-            Triple("blue", "Blue", Color(0xFF1565C0))
-        )
-
-        AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
-            title = {
-                Text(
-                    text = "Theme Color",
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    themes.forEach { (themeName, label, colorVal) ->
-                        val isSelected = dataManager.habitData.theme == themeName
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    dataManager.updateTheme(themeName)
-                                    showThemeDialog = false
-                                    Toast.makeText(context, "Theme set to $label", Toast.LENGTH_SHORT).show()
-                                }
-                                .padding(vertical = 10.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                        .background(colorVal, CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(14.dp))
-                                Text(
-                                    text = label,
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontSize = 15.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = {
-                                    dataManager.updateTheme(themeName)
-                                    showThemeDialog = false
-                                    Toast.makeText(context, "Theme set to $label", Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text("Cancel", fontFamily = FontFamily.SansSerif)
-                }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-
-    // 3. Backup & Restore Dialog
+    // 2. Backup & Restore Dialog
     if (showBackupDialog) {
         AlertDialog(
             onDismissRequest = { showBackupDialog = false },
+            shape = RoundedCornerShape(4.dp),
+            containerColor = Color.White,
+            tonalElevation = 0.dp,
             title = {
                 Text(
                     text = "Backup & Restore",
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 18.sp,
+                    color = Color(0xFF212121)
                 )
             },
             text = {
@@ -1352,48 +1474,51 @@ fun SettingsScreen(
                     Text(
                         text = "Export your habit data and logs to a JSON file or restore from an existing backup.",
                         fontFamily = FontFamily.SansSerif,
-                        fontSize = 13.sp,
-                        color = Color.Gray,
-                        lineHeight = 18.sp
+                        fontSize = 14.sp,
+                        color = Color(0xFF546E7A),
+                        lineHeight = 20.sp
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Button(
                         onClick = {
-                            showBackupDialog = false
-                            val timestamp = System.currentTimeMillis()
-                            val fileName = "habit_tracker_backup_$timestamp.json"
-                            fileCreatorLauncher.launch(fileName)
+                            val timeStamp = java.time.LocalDateTime.now()
+                                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+                            fileCreatorLauncher.launch("healthy_habits_backup_$timeStamp.json")
                         },
-                        shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = Color(0xFF2196F3),
+                            contentColor = Color.White
                         ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.fillMaxWidth().height(44.dp)
                     ) {
-                        Text("Create Backup", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("EXPORT BACKUP", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    OutlinedButton(
+                    Button(
                         onClick = {
-                            showBackupDialog = false
-                            filePickerLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                            filePickerLauncher.launch(arrayOf("application/json", "*/*"))
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.fillMaxWidth().height(44.dp)
                     ) {
-                        Text("Restore Backup", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("RESTORE BACKUP", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showBackupDialog = false }) {
-                    Text("Close", fontFamily = FontFamily.SansSerif)
+                    Text("CLOSE", color = Color(0xFF1976D2), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
-            },
-            shape = RoundedCornerShape(16.dp)
+            }
         )
     }
 
@@ -1401,12 +1526,16 @@ fun SettingsScreen(
     if (resetConfirmShow) {
         AlertDialog(
             onDismissRequest = { resetConfirmShow = false },
+            shape = RoundedCornerShape(4.dp),
+            containerColor = Color.White,
+            tonalElevation = 0.dp,
             title = {
                 Text(
                     "Reset App Data?",
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 18.sp,
+                    color = Color(0xFF212121)
                 )
             },
             text = {
@@ -1414,6 +1543,7 @@ fun SettingsScreen(
                     "This will completely erase all your logs, habits configuration, and settings. This action cannot be undone.",
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 14.sp,
+                    color = Color(0xFF546E7A),
                     lineHeight = 20.sp
                 )
             },
@@ -1425,15 +1555,14 @@ fun SettingsScreen(
                         Toast.makeText(context, "App cleared successfully!", Toast.LENGTH_SHORT).show()
                     }
                 ) {
-                    Text("YES, RESET EVERYTHING", color = Color.Red, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
+                    Text("RESET ALL DATA", color = Color(0xFFD32F2F), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { resetConfirmShow = false }) {
-                    Text("CANCEL", color = Color.Gray, fontFamily = FontFamily.SansSerif)
+                    Text("CANCEL", color = Color(0xFF1976D2), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
-            },
-            shape = RoundedCornerShape(16.dp)
+            }
         )
     }
 
@@ -1445,23 +1574,13 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Settings",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // 1. Habit Questions
@@ -1486,23 +1605,10 @@ fun SettingsScreen(
                     SettingItemRow(
                         title = "Daily Reminder",
                         state = if (isEnabled) "$reminderTimeStr • Enabled" else "$reminderTimeStr • Disabled",
-                        onClick = { showReminderDialog = true }
+                        onClick = onOpenReminderSettings
                     )
 
-                    // 3. Theme
-                    val themeLabel = when (dataManager.habitData.theme) {
-                        "orange" -> "Orange"
-                        "slate" -> "Slate"
-                        "blue" -> "Blue"
-                        else -> "Green"
-                    }
-                    SettingItemRow(
-                        title = "Theme",
-                        state = themeLabel,
-                        onClick = { showThemeDialog = true }
-                    )
-
-                    // 4. Backup & Restore
+                    // 3. Backup & Restore
                     SettingItemRow(
                         title = "Backup & Restore",
                         onClick = { showBackupDialog = true }
@@ -1569,6 +1675,30 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
+                text = "Icons by flaticon.com",
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 12.sp,
+                    color = Color(0xFF1976D2),
+                    textAlign = TextAlign.Center,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        try {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://www.flaticon.com/packs/essential-collection")
+                            )
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
                 text = "${BuildConfig.GIT_COMMIT} • ${BuildConfig.BUILD_DATE}",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
@@ -1588,4 +1718,267 @@ private fun openAppSettings(context: Context) {
         data = Uri.fromParts("package", context.packageName, null)
     }
     context.startActivity(intent)
+}
+
+// 5. Full Page Daily Reminder Screen
+@Composable
+fun ReminderSettingsScreen(
+    dataManager: DataManager,
+    notificationsEnabled: Boolean,
+    onOpenSettings: () -> Unit
+) {
+    val context = LocalContext.current
+    val reminder = dataManager.habitData.reminder
+    var isEnabled by remember(reminder) { mutableStateOf(reminder.enabled) }
+
+    val amPm = if (reminder.hour >= 12) "PM" else "AM"
+    val displayHour = when {
+        reminder.hour == 0 -> 12
+        reminder.hour > 12 -> reminder.hour - 12
+        else -> reminder.hour
+    }
+    val displayMinute = String.format(Locale.getDefault(), "%02d", reminder.minute)
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Hero Card featuring alarm.png
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Left prominent full-height icon container with padding
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(84.dp)
+                            .background(Color(0xFFFFF3E0)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.alarm),
+                            contentDescription = "Daily Reminder Alarm",
+                            modifier = Modifier
+                                .size(56.dp)
+                                .padding(4.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Daily Habit Reminder",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFF263238)
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "Receive daily notifications to record your habits and maintain momentum.",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 13.sp,
+                                color = Color(0xFF546E7A),
+                                lineHeight = 18.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Reminder Controls Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    // Enable/Disable row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Daily Reminder",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color(0xFF263238)
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (isEnabled) "Notifications arrive daily" else "Reminders are disabled",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 13.sp,
+                                    color = Color.Gray
+                                )
+                            )
+                        }
+
+                        Switch(
+                            checked = isEnabled,
+                            onCheckedChange = { checked ->
+                                isEnabled = checked
+                                dataManager.updateReminder(ReminderSettings(reminder.hour, reminder.minute, checked))
+                                ReminderScheduler.scheduleReminder(context, reminder.hour, reminder.minute, checked)
+                                Toast.makeText(
+                                    context,
+                                    if (checked) "Daily reminder enabled" else "Daily reminder disabled",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        color = Color(0xFFECEFF1)
+                    )
+
+                    // Scheduled time row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Reminder Time",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color(0xFF263238)
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$displayHour:$displayMinute $amPm",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 22.sp,
+                                    color = if (isEnabled) Color(0xFF1976D2) else Color.Gray
+                                )
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val timePicker = TimePickerDialog(
+                                    context,
+                                    { _, h, m ->
+                                        dataManager.updateReminder(ReminderSettings(h, m, isEnabled))
+                                        ReminderScheduler.scheduleReminder(context, h, m, isEnabled)
+                                        Toast.makeText(context, "Reminder time updated", Toast.LENGTH_SHORT).show()
+                                    },
+                                    reminder.hour,
+                                    reminder.minute,
+                                    false
+                                )
+                                timePicker.show()
+                            },
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "CHANGE TIME",
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
+                    if (!notificationsEnabled) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            color = Color(0xFFECEFF1)
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFFFEBEE), RoundedCornerShape(4.dp))
+                                .clickable { onOpenSettings() }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Notifications Disabled",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.SansSerif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Notifications are blocked in system settings. Tap here to enable permissions.",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.SansSerif,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFB71C1C)
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
