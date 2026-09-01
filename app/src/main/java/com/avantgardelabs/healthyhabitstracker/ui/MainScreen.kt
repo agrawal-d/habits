@@ -768,7 +768,7 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(6.dp))
 
                             Text(
-                                text = "You haven't logged your habits for today yet.",
+                                text = "Record your habits",
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
                                     fontSize = 13.sp,

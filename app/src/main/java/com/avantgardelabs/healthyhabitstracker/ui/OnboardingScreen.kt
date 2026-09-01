@@ -309,101 +309,87 @@ fun OnboardingScreen(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
+                        Image(
+                            painter = painterResource(id = R.drawable.star),
+                            contentDescription = "Welcome Star",
+                            modifier = Modifier.size(80.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Text(
+                            text = "TRACK YOUR DAILY HABITS",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1976D2)
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Get daily reminders",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 14.sp,
+                                color = Color(0xFF546E7A),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        Button(
+                            onClick = { pageIndex = 1 },
                             shape = RoundedCornerShape(4.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.star),
-                                    contentDescription = "Welcome Star",
-                                    modifier = Modifier.size(80.dp)
-                                )
+                            Text(
+                                text = "GET STARTED",
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
 
-                                Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                                Text(
-                                    text = "TRACK YOUR DAILY HABITS",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF1976D2)
-                                    )
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = "Get daily reminders",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF546E7A),
-                                        textAlign = TextAlign.Center,
-                                        lineHeight = 20.sp
-                                    )
-                                )
-
-                                Spacer(modifier = Modifier.height(28.dp))
-
-                                Button(
-                                    onClick = { pageIndex = 1 },
-                                    shape = RoundedCornerShape(4.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = Color.White
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp)
-                                ) {
-                                    Text(
-                                        text = "GET STARTED",
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Button(
-                                    onClick = {
-                                        filePickerLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-                                    },
-                                    shape = RoundedCornerShape(4.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF388E3C),
-                                        contentColor = Color.White
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(46.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.FileOpen,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "RESTORE BACKUP",
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                }
-                            }
+                        Button(
+                            onClick = {
+                                filePickerLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                            },
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF388E3C),
+                                contentColor = Color.White
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileOpen,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "RESTORE BACKUP",
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
                         }
                     }
                 }
