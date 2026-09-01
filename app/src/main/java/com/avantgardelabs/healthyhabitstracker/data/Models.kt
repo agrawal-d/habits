@@ -65,6 +65,28 @@ data class LogEntry(
         return (getScore() / questions.size) * 100.0
     }
 
+    fun getAbsoluteScore(): Int {
+        var score = 0
+        for ((_, answer) in answers) {
+            when (answer) {
+                AnswerType.YES -> score += 10
+                AnswerType.PARTIAL -> score += 5
+                AnswerType.NO -> {}
+            }
+        }
+        return score
+    }
+
+    fun getMaxScore(): Int {
+        return questions.size * 10
+    }
+
+    fun getScaledScore(): Int {
+        val max = getMaxScore()
+        if (max == 0) return 0
+        return Math.round((getAbsoluteScore().toDouble() / max) * 100).toInt()
+    }
+
     fun toJsonObject(): JSONObject {
         val obj = JSONObject()
         obj.put("date", date)

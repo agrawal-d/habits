@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,6 +42,65 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
+
+data class DaySummary(
+    val date: LocalDate,
+    val dateStr: String,
+    val isToday: Boolean,
+    val isYesterday: Boolean,
+    val log: LogEntry?
+)
+
+@Composable
+fun ScoreBadge(
+    score: Int?,
+    modifier: Modifier = Modifier
+) {
+    if (score == null) {
+        Box(
+            modifier = modifier
+                .size(44.dp)
+                .background(Color.Gray.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                .border(1.dp, Color.Gray.copy(alpha = 0.25f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "—",
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.Gray
+                )
+            )
+        }
+    } else {
+        val (bgColor, textColor) = when {
+            score >= 80 -> Color(0xFF2E7D32).copy(alpha = 0.12f) to Color(0xFF2E7D32)
+            score >= 50 -> Color(0xFFF57F17).copy(alpha = 0.12f) to Color(0xFFE65100)
+            else -> Color(0xFF5D4037).copy(alpha = 0.12f) to Color(0xFF5D4037)
+        }
+        val borderColor = textColor.copy(alpha = 0.4f)
+
+        Box(
+            modifier = modifier
+                .size(44.dp)
+                .background(bgColor, RoundedCornerShape(10.dp))
+                .border(1.dp, borderColor, RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = score.toString(),
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = textColor
+                )
+            )
+        }
+    }
+}
 
 @Composable
 fun StatusIcon(
@@ -190,7 +250,7 @@ fun MainScreen(
                     )
                     TabItemWithIcon(
                         label = "History",
-                        icon = Icons.Default.List,
+                        icon = Icons.AutoMirrored.Filled.List,
                         isSelected = currentTab == Tab.LOG,
                         onClick = { currentTab = Tab.LOG }
                     )
@@ -222,7 +282,8 @@ fun MainScreen(
                     } else {
                         HomeScreen(
                             dataManager = dataManager,
-                            onAnswerDate = { dateStr -> editingDate = dateStr }
+                            onAnswerDate = { dateStr -> editingDate = dateStr },
+                            onNavigateToLogs = { currentTab = Tab.LOG }
                         )
                     }
                 }
@@ -380,265 +441,280 @@ fun NotificationBlockerScreen(
 @Composable
 fun HomeScreen(
     dataManager: DataManager,
-    onAnswerDate: (String) -> Unit
+    onAnswerDate: (String) -> Unit,
+    onNavigateToLogs: () -> Unit
 ) {
     val today = LocalDate.now()
-    val todayStr = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-    val yesterday = today.minusDays(1)
-    val yesterdayStr = yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-
-    val rollingDays = remember(dataManager.habitData.logs) {
+    val last7Days = remember(dataManager.habitData.logs) {
         (0..6).map { offset ->
             val date = today.minusDays(offset.toLong())
             val dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val log = dataManager.habitData.logs.firstOrNull { it.date == dateStr }
-            val dayName = date.dayOfWeek.getDisplayName(JavaTextStyle.SHORT, Locale.US)
-            val dayNum = date.dayOfMonth.toString()
-            Triple(dayName, dayNum, log)
-        }.reversed()
+            DaySummary(
+                date = date,
+                dateStr = dateStr,
+                isToday = offset == 0,
+                isYesterday = offset == 1,
+                log = log
+            )
+        }
     }
 
-    val todayLog = dataManager.habitData.logs.firstOrNull { it.date == todayStr }
-    val yesterdayLog = dataManager.habitData.logs.firstOrNull { it.date == yesterdayStr }
+    val loggedScores = remember(last7Days) {
+        last7Days.mapNotNull { it.log?.getScaledScore() }
+    }
+    val avgScore = remember(loggedScores) {
+        if (loggedScores.isNotEmpty()) {
+            Math.round(loggedScores.sum().toDouble() / loggedScores.size).toInt()
+        } else null
+    }
+    val loggedCount = loggedScores.size
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp)
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // App header title
-        Text(
-            text = "HABIT TRACKER",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Rolling 7-day card
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.List,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            // App header title
             Text(
-                text = "Last 7 days",
+                text = "HABIT TRACKER",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
             )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+            // 7-Day Momentum Overview Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
-                rollingDays.forEach { (dayName, dayNum, log) ->
-                    val scoreColor = when {
-                        log == null -> Color(0xFFE0E0E0)
-                        else -> {
-                            val pct = log.getScorePercentage()
-                            when {
-                                pct >= 100.0 -> Color(0xFF2E7D32)
-                                pct >= 50.0 -> Color(0xFFF57F17)
-                                else -> Color(0xFF5D4037)
-                            }
-                        }
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
                         Text(
-                            text = dayName,
+                            text = "Last 7 Days Average",
                             style = TextStyle(
                                 fontFamily = FontFamily.SansSerif,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 color = Color.Gray,
                                 fontWeight = FontWeight.Medium
                             )
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                                .background(scoreColor, RoundedCornerShape(6.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (log != null) {
-                                StatusIcon(
-                                    pct = log.getScorePercentage(),
-                                    modifier = Modifier.size(16.dp),
-                                    tintColor = Color.White
-                                )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (avgScore != null) "$avgScore / 100" else "—",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Logged",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "$loggedCount / 7 days",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Last 7 Days",
+                    style = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        items(last7Days) { day ->
+            val dateLabel = day.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d"))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onAnswerDate(day.dateStr) },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (day.isToday && day.log == null) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    }
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = if (day.isToday) 1.5.dp else 1.dp,
+                    color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (day.isToday) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.primary,
+                                            RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "TODAY",
+                                        style = TextStyle(
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            } else if (day.isYesterday) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            Color.Gray.copy(alpha = 0.2f),
+                                            RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "YESTERDAY",
+                                        style = TextStyle(
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.Gray
+                                        )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
                             }
+
+                            Text(
+                                text = dateLabel,
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = dayNum,
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        if (day.log != null) {
+                            val earned = day.log.getAbsoluteScore()
+                            val max = day.log.getMaxScore()
+                            Text(
+                                text = "$earned / $max pts",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Medium
+                                )
                             )
-                        )
+                        } else {
+                            Text(
+                                text = if (day.isToday) "Tap to check in" else "Not recorded",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 12.sp,
+                                    color = if (day.isToday) MaterialTheme.colorScheme.primary else Color.Gray,
+                                    fontWeight = if (day.isToday) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            )
+                        }
                     }
+
+                    ScoreBadge(score = day.log?.getScaledScore())
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Today's status box (above yesterday)
-        Text(
-            text = "Today's Status",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onAnswerDate(todayStr) },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-        ) {
-            Row(
+        item {
+            Spacer(modifier = Modifier.height(6.dp))
+            Button(
+                onClick = onNavigateToLogs,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = Color.White
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .height(44.dp)
             ) {
-                Text(
-                    text = today.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
                 )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (todayLog != null) {
-                        StatusIcon(
-                            pct = todayLog.getScorePercentage(),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Pending",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Previous Day (Yesterday) score box (below today)
-        Text(
-            text = "Yesterday's Status",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onAnswerDate(yesterdayStr) },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = yesterday.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    text = "View Full History",
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
                 )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (yesterdayLog != null) {
-                        StatusIcon(
-                            pct = yesterdayLog.getScorePercentage(),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Missing",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
             }
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -658,7 +734,7 @@ fun LogScreen(
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "History",
@@ -750,19 +826,30 @@ fun LogHistoryItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = formattedDate,
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+                Column {
+                    Text(
+                        text = formattedDate,
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     )
-                )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${entry.getAbsoluteScore()} / ${entry.getMaxScore()} pts",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
 
-                StatusIcon(
-                    pct = entry.getScorePercentage(),
-                    modifier = Modifier.size(24.dp)
+                ScoreBadge(
+                    score = entry.getScaledScore()
                 )
             }
 
