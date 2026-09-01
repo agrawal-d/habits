@@ -34,6 +34,12 @@
             android:theme="@style/Theme.HealthyHabitsTracker"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".LicenseActivity"
+            android:exported="false"
+            android:label="License"
+            android:theme="@style/Theme.HealthyHabitsTracker" />
+
         <receiver
             android:name=".receiver.HabitReminderReceiver"
             android:enabled="true"

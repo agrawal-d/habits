@@ -15,7 +15,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.avantgardelabs.healthyhabitstracker.BuildConfig
 import com.avantgardelabs.healthyhabitstracker.EditQuestionsActivity
 import com.avantgardelabs.healthyhabitstracker.data.AnswerType
 import com.avantgardelabs.healthyhabitstracker.data.DataManager
@@ -229,36 +233,33 @@ fun MainScreen(
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(MaterialTheme.colorScheme.outline)
-                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                        .height(58.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TabItemWithIcon(
                         label = "Home",
                         icon = Icons.Default.Home,
                         isSelected = currentTab == Tab.HOME,
-                        onClick = { currentTab = Tab.HOME }
+                        onClick = { currentTab = Tab.HOME },
+                        modifier = Modifier.weight(1f)
                     )
                     TabItemWithIcon(
                         label = "History",
                         icon = Icons.AutoMirrored.Filled.List,
                         isSelected = currentTab == Tab.LOG,
-                        onClick = { currentTab = Tab.LOG }
+                        onClick = { currentTab = Tab.LOG },
+                        modifier = Modifier.weight(1f)
                     )
                     TabItemWithIcon(
                         label = "Settings",
                         icon = Icons.Default.Settings,
                         isSelected = currentTab == Tab.SETTINGS,
-                        onClick = { currentTab = Tab.SETTINGS }
+                        onClick = { currentTab = Tab.SETTINGS },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -312,31 +313,36 @@ fun TabItemWithIcon(
     label: String,
     icon: ImageVector,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                fontSize = 12.sp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                modifier = Modifier.size(20.dp)
             )
-        )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = label,
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 13.sp,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                )
+            )
+        }
     }
 }
 
@@ -465,7 +471,8 @@ fun HomeScreen(
     }
     val avgScore = remember(loggedScores) {
         if (loggedScores.isNotEmpty()) {
-            Math.round(loggedScores.sum().toDouble() / loggedScores.size).toInt()
+            val raw = loggedScores.sum().toDouble() / loggedScores.size
+            (Math.round(raw / 5.0) * 5).toInt()
         } else null
     }
     val loggedCount = loggedScores.size
@@ -473,60 +480,123 @@ fun HomeScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             // App header title
             Text(
-                text = "HABIT TRACKER",
+                text = "Habits",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.primary
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 7-Day Momentum Overview Card
+            // 7-Day Momentum Overview Card with dynamic score-based color & icon (no fluff text)
+            val cardBgColor = when {
+                avgScore == null -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                avgScore >= 80 -> Color(0xFF2E7D32).copy(alpha = 0.12f)
+                avgScore >= 50 -> Color(0xFFF57F17).copy(alpha = 0.12f)
+                else -> Color(0xFF5D4037).copy(alpha = 0.10f)
+            }
+            val cardBorderColor = when {
+                avgScore == null -> MaterialTheme.colorScheme.outlineVariant
+                avgScore >= 80 -> Color(0xFF2E7D32).copy(alpha = 0.35f)
+                avgScore >= 50 -> Color(0xFFF57F17).copy(alpha = 0.35f)
+                else -> Color(0xFF5D4037).copy(alpha = 0.30f)
+            }
+            val statusIcon = when {
+                avgScore == null -> Icons.Default.QueryBuilder
+                avgScore >= 80 -> Icons.Default.EmojiEvents
+                avgScore >= 50 -> Icons.AutoMirrored.Filled.TrendingUp
+                else -> Icons.Default.FitnessCenter
+            }
+            val accentColor = when {
+                avgScore == null -> Color.Gray
+                avgScore >= 80 -> Color(0xFF2E7D32)
+                avgScore >= 50 -> Color(0xFFE65100)
+                else -> Color(0xFF5D4037)
+            }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = cardBgColor),
+                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "Last 7 Days Average",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 12.sp,
-                                color = Color.Gray,
-                                fontWeight = FontWeight.Medium
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(accentColor.copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(24.dp)
                             )
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (avgScore != null) "$avgScore / 100" else "—",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column {
+                            Text(
+                                text = "7-Day Average",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Medium
+                                )
                             )
-                        )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    text = if (avgScore != null) "$avgScore" else "—",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.SansSerif,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = accentColor
+                                    )
+                                )
+                                if (avgScore != null) {
+                                    Text(
+                                        text = " / 100",
+                                        style = TextStyle(
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.Gray
+                                        ),
+                                        modifier = Modifier.padding(bottom = 3.dp, start = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
 
-                    Column(horizontalAlignment = Alignment.End) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.padding(start = 12.dp)
+                    ) {
                         Text(
                             text = "Logged",
                             style = TextStyle(
@@ -536,51 +606,54 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Medium
                             )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "$loggedCount / 7 days",
+                            text = "$loggedCount / 7",
                             style = TextStyle(
                                 fontFamily = FontFamily.SansSerif,
-                                fontSize = 16.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                        Text(
+                            text = "days",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 11.sp,
+                                color = Color.Gray
                             )
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+            Text(
+                text = "Last 7 Days",
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Last 7 Days",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                )
-            }
+            )
             Spacer(modifier = Modifier.height(4.dp))
         }
 
         items(last7Days) { day ->
-            val dateLabel = day.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d"))
+            val dateLabel = when {
+                day.isToday -> "Today"
+                day.isYesterday -> "Yesterday"
+                else -> day.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d"))
+            }
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onAnswerDate(day.dateStr) },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (day.isToday && day.log == null) {
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
@@ -589,131 +662,93 @@ fun HomeScreen(
                     }
                 ),
                 border = androidx.compose.foundation.BorderStroke(
-                    width = if (day.isToday) 1.5.dp else 1.dp,
-                    color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    width = if (day.isToday && day.log == null) 1.5.dp else 1.dp,
+                    color = if (day.isToday && day.log == null) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                    }
                 )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 18.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (day.isToday) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.primary,
-                                            RoundedCornerShape(4.dp)
-                                        )
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "TODAY",
-                                        style = TextStyle(
-                                            fontFamily = FontFamily.SansSerif,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    )
+                        Text(
+                            text = dateLabel,
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                color = if (day.isToday && day.log == null) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
                                 }
-                                Spacer(modifier = Modifier.width(8.dp))
-                            } else if (day.isYesterday) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            Color.Gray.copy(alpha = 0.2f),
-                                            RoundedCornerShape(4.dp)
-                                        )
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "YESTERDAY",
-                                        style = TextStyle(
-                                            fontFamily = FontFamily.SansSerif,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.Gray
-                                        )
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-
-                            Text(
-                                text = dateLabel,
-                                style = TextStyle(
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(4.dp))
+                        )
 
                         if (day.log != null) {
                             val earned = day.log.getAbsoluteScore()
                             val max = day.log.getMaxScore()
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "$earned / $max pts",
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
-                                    fontSize = 12.sp,
+                                    fontSize = 13.sp,
                                     color = Color.Gray,
                                     fontWeight = FontWeight.Medium
                                 )
                             )
-                        } else {
+                        } else if (!day.isToday) {
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = if (day.isToday) "Tap to check in" else "Not recorded",
+                                text = "Not recorded",
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
-                                    fontSize = 12.sp,
-                                    color = if (day.isToday) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    fontWeight = if (day.isToday) FontWeight.SemiBold else FontWeight.Normal
+                                    fontSize = 13.sp,
+                                    color = Color.Gray.copy(alpha = 0.7f),
+                                    fontWeight = FontWeight.Normal
                                 )
                             )
                         }
                     }
 
-                    ScoreBadge(score = day.log?.getScaledScore())
+                    if (day.isToday && day.log == null) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                                    RoundedCornerShape(12.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Add entry",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    } else {
+                        ScoreBadge(score = day.log?.getScaledScore())
+                    }
                 }
             }
         }
 
         item {
-            Spacer(modifier = Modifier.height(6.dp))
-            Button(
-                onClick = onNavigateToLogs,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.DarkGray,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "View Full History",
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
@@ -731,31 +766,28 @@ fun LogScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "History",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
         Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "History",
+            style = TextStyle(
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         if (logs.isEmpty()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Box(
                     modifier = Modifier
@@ -779,7 +811,7 @@ fun LogScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(logs) { entry ->
                     LogHistoryItem(
@@ -804,7 +836,12 @@ fun LogHistoryItem(
     val formattedDate = remember(entry.date) {
         try {
             val date = LocalDate.parse(entry.date)
-            date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy"))
+            val today = LocalDate.now()
+            when {
+                date == today -> "Today"
+                date == today.minusDays(1) -> "Yesterday"
+                else -> date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy"))
+            }
         } catch (e: Exception) {
             entry.date
         }
@@ -812,14 +849,14 @@ fun LogHistoryItem(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
     ) {
         Column(
             modifier = Modifier
                 .clickable { expanded = !expanded }
-                .padding(14.dp)
+                .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -831,17 +868,17 @@ fun LogHistoryItem(
                         text = formattedDate,
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${entry.getAbsoluteScore()} / ${entry.getMaxScore()} pts",
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             color = Color.Gray,
                             fontWeight = FontWeight.Medium
                         )
@@ -854,13 +891,13 @@ fun LogHistoryItem(
             }
 
             if (expanded) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.02f), RoundedCornerShape(8.dp))
-                        .padding(12.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                        .padding(14.dp)
                 ) {
                     entry.questions.forEach { question ->
                         val answer = entry.answers[question.id] ?: AnswerType.NO
@@ -930,28 +967,110 @@ fun LogHistoryItem(
 
                     Row(
                         horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                        TextButton(
+                            onClick = onEdit,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit",
-                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Edit", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         }
+
                         Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+
+                        TextButton(
+                            onClick = onDelete,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete",
-                                tint = Color.Gray,
                                 modifier = Modifier.size(18.dp)
                             )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Delete", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+// 4. Settings Screen implementation
+@Composable
+fun SettingItemRow(
+    title: String,
+    state: String? = null,
+    onClick: () -> Unit,
+    showDivider: Boolean = true
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                if (!state.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = state,
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.Gray.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
         }
     }
 }
@@ -965,6 +1084,11 @@ fun SettingsScreen(
     onOpenSettings: () -> Unit
 ) {
     val context = LocalContext.current
+
+    // Dialog visibility states
+    var showReminderDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showBackupDialog by remember { mutableStateOf(false) }
     var resetConfirmShow by remember { mutableStateOf(false) }
 
     // Reminder States
@@ -1009,7 +1133,271 @@ fun SettingsScreen(
         }
     }
 
-    // Reset app confirmation dialog
+    // 1. Daily Reminder Dialog
+    if (showReminderDialog) {
+        val amPm = if (reminder.hour >= 12) "PM" else "AM"
+        val displayHour = when {
+            reminder.hour == 0 -> 12
+            reminder.hour > 12 -> reminder.hour - 12
+            else -> reminder.hour
+        }
+        val displayMinute = String.format("%02d", reminder.minute)
+
+        AlertDialog(
+            onDismissRequest = { showReminderDialog = false },
+            title = {
+                Text(
+                    text = "Daily Reminder",
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Reminder Time",
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "$displayHour:$displayMinute $amPm",
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 13.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                val timePicker = TimePickerDialog(
+                                    context,
+                                    { _, h, m ->
+                                        dataManager.updateReminder(ReminderSettings(h, m, isEnabled))
+                                        ReminderScheduler.scheduleReminder(context, h, m, isEnabled)
+                                        Toast.makeText(context, "Reminder time updated", Toast.LENGTH_SHORT).show()
+                                    },
+                                    reminder.hour,
+                                    reminder.minute,
+                                    false
+                                )
+                                timePicker.show()
+                            }
+                        ) {
+                            Text("Change", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Alarm Enabled",
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (isEnabled) "Notifications will arrive daily" else "Alarms are turned off",
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 13.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        Switch(
+                            checked = isEnabled,
+                            onCheckedChange = { checked ->
+                                isEnabled = checked
+                                dataManager.updateReminder(ReminderSettings(reminder.hour, reminder.minute, checked))
+                                ReminderScheduler.scheduleReminder(context, reminder.hour, reminder.minute, checked)
+                                Toast.makeText(
+                                    context,
+                                    if (checked) "Reminder enabled" else "Reminder disabled",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
+
+                    if (!notificationsEnabled) {
+                        Text(
+                            text = "Notifications are disabled in Android settings. Tap to fix.",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier.clickable { onOpenSettings() }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showReminderDialog = false }) {
+                    Text("Done", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // 2. Theme Dialog
+    if (showThemeDialog) {
+        val themes = listOf(
+            Triple("green", "Green", Color(0xFF1B5E20)),
+            Triple("orange", "Orange", Color(0xFFFF6600)),
+            Triple("slate", "Slate", Color(0xFF455A64)),
+            Triple("blue", "Blue", Color(0xFF1565C0))
+        )
+
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = {
+                Text(
+                    text = "Theme Color",
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    themes.forEach { (themeName, label, colorVal) ->
+                        val isSelected = dataManager.habitData.theme == themeName
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    dataManager.updateTheme(themeName)
+                                    showThemeDialog = false
+                                    Toast.makeText(context, "Theme set to $label", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(vertical = 10.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .background(colorVal, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(14.dp))
+                                Text(
+                                    text = label,
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 15.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    dataManager.updateTheme(themeName)
+                                    showThemeDialog = false
+                                    Toast.makeText(context, "Theme set to $label", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("Cancel", fontFamily = FontFamily.SansSerif)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // 3. Backup & Restore Dialog
+    if (showBackupDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackupDialog = false },
+            title = {
+                Text(
+                    text = "Backup & Restore",
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "Export your habit data and logs to a JSON file or restore from an existing backup.",
+                        fontFamily = FontFamily.SansSerif,
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Button(
+                        onClick = {
+                            showBackupDialog = false
+                            val timestamp = System.currentTimeMillis()
+                            val fileName = "habit_tracker_backup_$timestamp.json"
+                            fileCreatorLauncher.launch(fileName)
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                    ) {
+                        Text("Create Backup", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            showBackupDialog = false
+                            filePickerLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                    ) {
+                        Text("Restore Backup", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showBackupDialog = false }) {
+                    Text("Close", fontFamily = FontFamily.SansSerif)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // 4. Reset Confirmation Dialog
     if (resetConfirmShow) {
         AlertDialog(
             onDismissRequest = { resetConfirmShow = false },
@@ -1018,14 +1406,15 @@ fun SettingsScreen(
                     "Reset App Data?",
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 18.sp
                 )
             },
             text = {
                 Text(
                     "This will completely erase all your logs, habits configuration, and settings. This action cannot be undone.",
                     fontFamily = FontFamily.SansSerif,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
                 )
             },
             confirmButton = {
@@ -1044,384 +1433,132 @@ fun SettingsScreen(
                     Text("CANCEL", color = Color.Gray, fontFamily = FontFamily.SansSerif)
                 }
             },
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
+    // Main Settings List Layout
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Title
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Settings",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                )
-            }
-        }
-
-        // Section: Configure Active Habits / Questions (Separate Activity trigger)
-        item {
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Habit Questions",
+                text = "Settings",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    val intent = Intent(context, EditQuestionsActivity::class.java)
-                    context.startActivity(intent)
-                },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier.fillMaxWidth().height(48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Configure Questions",
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
-            }
-        }
-
-        // Section: Daily Reminder Settings (Cleaned, no colons/numbers)
-        item {
-            Text(
-                text = "Daily Reminder",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val amPm = if (reminder.hour >= 12) "PM" else "AM"
-                        val displayHour = when {
-                            reminder.hour == 0 -> 12
-                            reminder.hour > 12 -> reminder.hour - 12
-                            else -> reminder.hour
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // 1. Habit Questions
+                    SettingItemRow(
+                        title = "Habit Questions",
+                        state = "${dataManager.habitData.questions.size} active habits",
+                        onClick = {
+                            val intent = Intent(context, EditQuestionsActivity::class.java)
+                            context.startActivity(intent)
                         }
-                        val displayMinute = String.format("%02d", reminder.minute)
+                    )
 
-                        Text(
-                            text = "Scheduled Time: $displayHour:$displayMinute $amPm",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-
-                        Button(
-                            onClick = {
-                                val timePicker = TimePickerDialog(
-                                    context,
-                                    { _, h, m ->
-                                        dataManager.updateReminder(ReminderSettings(h, m, isEnabled))
-                                        ReminderScheduler.scheduleReminder(context, h, m, isEnabled)
-                                        Toast.makeText(context, "Reminder time updated", Toast.LENGTH_SHORT).show()
-                                    },
-                                    reminder.hour,
-                                    reminder.minute,
-                                    false
-                                )
-                                timePicker.show()
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray, contentColor = Color.White),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text("Set Time", fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
+                    // 2. Daily Reminder
+                    val amPm = if (reminder.hour >= 12) "PM" else "AM"
+                    val displayHour = when {
+                        reminder.hour == 0 -> 12
+                        reminder.hour > 12 -> reminder.hour - 12
+                        else -> reminder.hour
                     }
+                    val displayMinute = String.format("%02d", reminder.minute)
+                    val reminderTimeStr = "$displayHour:$displayMinute $amPm"
+                    SettingItemRow(
+                        title = "Daily Reminder",
+                        state = if (isEnabled) "$reminderTimeStr • Enabled" else "$reminderTimeStr • Disabled",
+                        onClick = { showReminderDialog = true }
+                    )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    // 3. Theme
+                    val themeLabel = when (dataManager.habitData.theme) {
+                        "orange" -> "Orange"
+                        "slate" -> "Slate"
+                        "blue" -> "Blue"
+                        else -> "Green"
+                    }
+                    SettingItemRow(
+                        title = "Theme",
+                        state = themeLabel,
+                        onClick = { showThemeDialog = true }
+                    )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Alarm Enabled",
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 13.sp
-                        )
+                    // 4. Backup & Restore
+                    SettingItemRow(
+                        title = "Backup & Restore",
+                        onClick = { showBackupDialog = true }
+                    )
 
-                        Checkbox(
-                            checked = isEnabled,
-                            onCheckedChange = { checked ->
-                                isEnabled = checked
-                                dataManager.updateReminder(ReminderSettings(reminder.hour, reminder.minute, checked))
-                                ReminderScheduler.scheduleReminder(context, reminder.hour, reminder.minute, checked)
-                                Toast.makeText(
-                                    context,
-                                    if (checked) "Reminder scheduled" else "Reminder disabled",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                    // 5. License
+                    SettingItemRow(
+                        title = "License",
+                        onClick = {
+                            val intent = Intent(context, com.avantgardelabs.healthyhabitstracker.LicenseActivity::class.java)
+                            context.startActivity(intent)
+                        }
+                    )
+
+                    // 6. Report a Bug
+                    SettingItemRow(
+                        title = "Report a Bug",
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/agrawal-d/habits/issues"))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Cannot open issues page", Toast.LENGTH_SHORT).show()
                             }
-                        )
-                    }
-
-                    if (!notificationsEnabled) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Fix Notifications settings",
-                                style = TextStyle(
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                modifier = Modifier.clickable { onOpenSettings() }
-                            )
                         }
-                    }
-                }
-            }
-        }
-
-        // Section: Data Backup and Restore
-        item {
-            Text(
-                text = "Backup & Restore",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val timestamp = System.currentTimeMillis()
-                            val fileName = "habit_tracker_backup_$timestamp.json"
-                            fileCreatorLauncher.launch(fileName)
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray, contentColor = Color.White),
-                        modifier = Modifier.fillMaxWidth().height(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Backup,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Create Backup", fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = {
-                            filePickerLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.fillMaxWidth().height(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Restore,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Restore Backup", fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        // Section: Theme Color Setup (Moved to the bottom, right above Reset button)
-        item {
-            Text(
-                text = "Theme",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val themes = listOf(
-                        Triple("green", "Green", Color(0xFF1B5E20)),
-                        Triple("orange", "Orange", Color(0xFFFF6600)),
-                        Triple("slate", "Slate", Color(0xFF455A64)),
-                        Triple("blue", "Blue", Color(0xFF1565C0))
                     )
 
-                    themes.forEach { (themeName, label, colorVal) ->
-                        val isSelected = dataManager.habitData.theme == themeName
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(38.dp)
-                                .border(
-                                    1.dp,
-                                    if (isSelected) colorVal else MaterialTheme.colorScheme.outline,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    if (isSelected) colorVal.copy(alpha = 0.15f) else Color.Transparent,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .clickable {
-                                    dataManager.updateTheme(themeName)
-                                    Toast.makeText(context, "Theme changed to $label", Toast.LENGTH_SHORT).show()
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                style = TextStyle(
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) colorVal else Color.Gray
-                                )
-                            )
-                        }
-                    }
+                    // 7. Reset App Data
+                    SettingItemRow(
+                        title = "Reset App Data",
+                        onClick = { resetConfirmShow = true },
+                        showDivider = true
+                    )
+
+                    // 8. Source Code
+                    SettingItemRow(
+                        title = "Source Code",
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/agrawal-d/habits"))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Cannot open GitHub page", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        showDivider = false
+                    )
                 }
             }
         }
 
-        // Section: Report a Bug Button
+        // Footer Credit
         item {
-            Spacer(modifier = Modifier.height(10.dp))
-            Button(
-                onClick = {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/agrawal-d/habits/issues"))
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Cannot open issues page", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.DarkGray,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth().height(44.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.BugReport,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Report Bug", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        // Section: Reset App Data (Simple plain button directly in item, no outer card box or text)
-        item {
-            Spacer(modifier = Modifier.height(10.dp))
-            Button(
-                onClick = { resetConfirmShow = true },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier.fillMaxWidth().height(44.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Reset App", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        // Designed by Credit
-        item {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Designed by Divyanshu Agrawal",
+                text = "Healthy Habits Tracker • Divyanshu Agrawal",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 12.sp,
@@ -1430,7 +1567,18 @@ fun SettingsScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${BuildConfig.GIT_COMMIT} • ${BuildConfig.BUILD_DATE}",
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 11.sp,
+                    color = Color.Gray.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

@@ -19,8 +19,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.avantgardelabs.healthyhabitstracker.ui.EditQuestionScreen
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.input.pointer.pointerInput
@@ -82,9 +84,22 @@ fun EditQuestionsContent(
 ) {
     val context = LocalContext.current
 
-    var editModeId by remember { mutableStateOf<String?>(null) }
-    var editModeText by remember { mutableStateOf("") }
-    var editModeIcon by remember { mutableStateOf("") }
+    var editingQuestion by remember { mutableStateOf<Question?>(null) }
+
+    if (editingQuestion != null) {
+        EditQuestionScreen(
+            question = editingQuestion!!,
+            onSave = { updated ->
+                dataManager.updateQuestion(updated)
+                editingQuestion = null
+                Toast.makeText(context, "Habit updated", Toast.LENGTH_SHORT).show()
+            },
+            onCancel = {
+                editingQuestion = null
+            }
+        )
+        return
+    }
 
     var addModeText by remember { mutableStateOf("") }
     var addModeIcon by remember { mutableStateOf("star") }
@@ -98,46 +113,45 @@ fun EditQuestionsContent(
             .fillMaxSize()
             .systemBarsPadding()
             .imePadding()
-            .padding(20.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        // Custom Header Bar with Back button
+        // Standard Material 3 Header Bar with Back button
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                .padding(12.dp),
+                .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(4.dp))
 
             Text(
-                text = "Configure Habit Questions",
+                text = "Habit Questions",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onBackground
                 ),
                 modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Create box
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
                 modifier = Modifier
@@ -307,7 +321,6 @@ fun EditQuestionsContent(
                 }
             } else {
                 itemsIndexed(questions) { idx, question ->
-                    val isEditing = editModeId == question.id
                     val isDraggingThis = draggedIndex == idx
                     val translationY = if (isDraggingThis) dragOffset else 0f
 
@@ -359,155 +372,75 @@ fun EditQuestionsContent(
                                     }
                                 )
                             },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (!isEditing) {
-                                Icon(
-                                    imageVector = Icons.Default.DragHandle,
-                                    contentDescription = "Drag to reorder",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-                            if (isEditing) {
-                                // Inline Edit
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                                        .background(Color.White, RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            // Rotate icons inside edit modes
-                                            val currentIdx = IconMapper.availableIcons.indexOfFirst { it.first == editModeIcon }
-                                            val nextIdx = (currentIdx + 1) % IconMapper.availableIcons.size
-                                            editModeIcon = IconMapper.availableIcons[nextIdx].first
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = IconMapper.getIconByName(editModeIcon),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(36.dp)
-                                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                                        .background(Color.White, RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 8.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    BasicTextField(
-                                        value = editModeText,
-                                        onValueChange = { editModeText = it },
-                                        textStyle = TextStyle(color = Color.Black, fontSize = 13.sp),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                 Text(
-                                     text = "Save",
-                                     style = TextStyle(
-                                         fontFamily = FontFamily.SansSerif,
-                                         fontSize = 11.sp,
-                                         color = Color(0xFF2E7D32),
-                                         fontWeight = FontWeight.Bold
-                                     ),
-                                     modifier = Modifier.clickable {
-                                         if (editModeText.trim().isNotEmpty()) {
-                                             dataManager.updateQuestion(
-                                                 Question(
-                                                     id = question.id,
-                                                     text = editModeText.trim(),
-                                                     icon = editModeIcon
-                                                 )
-                                             )
-                                             editModeId = null
-                                             keyboardController?.hide()
-                                             Toast.makeText(context, "Habit updated", Toast.LENGTH_SHORT).show()
-                                         }
-                                     }
-                                 )
-                                 Spacer(modifier = Modifier.width(12.dp))
-                                 Text(
-                                     text = "Cancel",
-                                     style = TextStyle(
-                                         fontFamily = FontFamily.SansSerif,
-                                         fontSize = 11.sp,
-                                         color = Color.Gray
-                                     ),
-                                     modifier = Modifier.clickable {
-                                         editModeId = null
-                                         keyboardController?.hide()
-                                     }
-                                 )
-                            } else {
-                                // Display Row
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                            RoundedCornerShape(8.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = IconMapper.getIconByName(question.icon),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = question.text,
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onBackground
+                            Icon(
+                                imageVector = Icons.Default.DragHandle,
+                                contentDescription = "Drag to reorder",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        RoundedCornerShape(8.dp)
                                     ),
-                                    modifier = Modifier.weight(1f)
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = IconMapper.getIconByName(question.icon),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                                
-                                IconButton(onClick = {
-                                    editModeId = question.id
-                                    editModeText = question.text
-                                    editModeIcon = question.icon
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = question.text,
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
 
-                                 IconButton(onClick = {
-                                     dataManager.deleteQuestion(question.id)
-                                     Toast.makeText(context, "Habit deleted", Toast.LENGTH_SHORT).show()
-                                 }, modifier = Modifier.size(28.dp)) {
-                                     Icon(
-                                         imageVector = Icons.Default.Delete,
-                                         contentDescription = "Delete",
-                                         tint = Color.Gray,
-                                         modifier = Modifier.size(16.dp)
-                                     )
-                                 }
+                            IconButton(
+                                onClick = { editingQuestion = question },
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Question",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    dataManager.deleteQuestion(question.id)
+                                    Toast.makeText(context, "Habit deleted", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Question",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                     }

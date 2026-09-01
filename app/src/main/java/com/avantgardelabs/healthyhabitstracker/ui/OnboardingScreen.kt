@@ -46,6 +46,7 @@ fun OnboardingScreen(
     
     // Page 1 data: empty questions list (do not pre-fill)
     val questions = remember { mutableStateListOf<Question>() }
+    var editingQuestionIndex by remember { mutableStateOf<Int?>(null) }
     var newQuestionText by remember { mutableStateOf("") }
     var newQuestionIcon by remember { mutableStateOf("star") }
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
@@ -58,6 +59,21 @@ fun OnboardingScreen(
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
+    if (editingQuestionIndex != null && editingQuestionIndex!! in questions.indices) {
+        val q = questions[editingQuestionIndex!!]
+        EditQuestionScreen(
+            question = q,
+            onSave = { updated ->
+                questions[editingQuestionIndex!!] = updated
+                editingQuestionIndex = null
+            },
+            onCancel = {
+                editingQuestionIndex = null
+            }
+        )
+        return
+    }
 
     // Launcher for file import (restore backup) during onboarding
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -420,14 +436,26 @@ fun OnboardingScreen(
                                                 modifier = Modifier.weight(1f)
                                             )
                                             IconButton(
+                                                onClick = { editingQuestionIndex = idx },
+                                                modifier = Modifier.size(44.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Edit,
+                                                    contentDescription = "Edit Question",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+
+                                            IconButton(
                                                 onClick = { questions.removeAt(idx) },
-                                                modifier = Modifier.size(28.dp)
+                                                modifier = Modifier.size(44.dp)
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Delete",
-                                                    tint = Color.Gray,
-                                                    modifier = Modifier.size(18.dp)
+                                                    contentDescription = "Delete Question",
+                                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                                    modifier = Modifier.size(20.dp)
                                                 )
                                             }
                                         }

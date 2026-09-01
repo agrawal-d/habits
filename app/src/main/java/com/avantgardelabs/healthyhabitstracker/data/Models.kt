@@ -84,7 +84,8 @@ data class LogEntry(
     fun getScaledScore(): Int {
         val max = getMaxScore()
         if (max == 0) return 0
-        return Math.round((getAbsoluteScore().toDouble() / max) * 100).toInt()
+        val raw = (getAbsoluteScore().toDouble() / max) * 100.0
+        return (Math.round(raw / 5.0) * 5).toInt()
     }
 
     fun toJsonObject(): JSONObject {
