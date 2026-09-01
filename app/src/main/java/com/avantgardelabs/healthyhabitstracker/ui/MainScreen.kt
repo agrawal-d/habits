@@ -45,6 +45,7 @@ import com.avantgardelabs.healthyhabitstracker.data.DataManager
 import com.avantgardelabs.healthyhabitstracker.data.LogEntry
 import com.avantgardelabs.healthyhabitstracker.data.ReminderScheduler
 import com.avantgardelabs.healthyhabitstracker.data.ReminderSettings
+import com.avantgardelabs.healthyhabitstracker.receiver.HabitReminderReceiver
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -342,7 +343,8 @@ fun MainScreen(
                         notificationsEnabled = notificationsEnabled,
                         onRequestNotificationPermission = onRequestNotificationPermission,
                         onOpenSettings = { openAppSettings(context) },
-                        onOpenReminderSettings = { currentTab = Tab.REMINDER }
+                        onOpenReminderSettings = { currentTab = Tab.REMINDER },
+                        onNavigateHome = { currentTab = Tab.HOME }
                     )
                 }
                 Tab.REMINDER -> {
@@ -586,19 +588,12 @@ fun RecentDayItem(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(28.dp)
-                                        .background(Color(0xFFE3F2FD), RoundedCornerShape(4.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = IconMapper.getIconByName(question.icon),
-                                        contentDescription = null,
-                                        tint = Color(0xFF1976D2),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                                Icon(
+                                    imageVector = IconMapper.getIconByName(question.icon),
+                                    contentDescription = null,
+                                    tint = Color(0xFF1976D2),
+                                    modifier = Modifier.size(18.dp)
+                                )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = question.text,
@@ -885,17 +880,53 @@ fun HomeScreen(
             }
         }
 
-        // Recent days (Image 2 style with right-aligned blue date block)
-        items(last7Days.filter { !it.isToday }) { day ->
-            RecentDayItem(
-                day = day,
-                onAnswerDate = onAnswerDate
-            )
+        // Recent days
+        val recentDays = last7Days.filter { !it.isToday }
+        if (loggedCount == 0) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp, horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No entries yet",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Your last 7 days will appear here",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 12.sp,
+                                color = Color(0xFFB0BEC5)
+                            )
+                        )
+                    }
+                }
+            }
+        } else {
+            items(recentDays) { day ->
+                RecentDayItem(
+                    day = day,
+                    onAnswerDate = onAnswerDate
+                )
+            }
         }
 
-        // History button below last 7 days logs
         item {
-            Spacer(modifier = Modifier.height(4.dp))
             Button(
                 onClick = onNavigateToLogs,
                 shape = RoundedCornerShape(4.dp),
@@ -906,7 +937,7 @@ fun HomeScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp)
+                    .height(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
@@ -915,7 +946,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "VIEW FULL HISTORY",
+                    text = "History",
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
@@ -974,8 +1005,8 @@ fun LogScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.route),
-                        contentDescription = "History Route",
+                        painter = painterResource(id = R.drawable.list),
+                        contentDescription = "History",
                         modifier = Modifier
                             .size(56.dp)
                             .padding(4.dp)
@@ -988,21 +1019,12 @@ fun LogScreen(
                         .padding(horizontal = 16.dp, vertical = 18.dp)
                 ) {
                     Text(
-                        text = "History",
+                        text = "${logs.size} total entries",
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color(0xFF263238)
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${logs.size} total entries",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 13.sp,
-                            color = Color(0xFF546E7A)
                         )
                     )
                 }
@@ -1028,7 +1050,7 @@ fun LogScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.route),
+                        painter = painterResource(id = R.drawable.list),
                         contentDescription = null,
                         modifier = Modifier.size(56.dp)
                     )
@@ -1217,19 +1239,12 @@ fun LogHistoryItem(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(28.dp)
-                                        .background(Color(0xFFE3F2FD), RoundedCornerShape(4.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = IconMapper.getIconByName(question.icon),
-                                        contentDescription = null,
-                                        tint = Color(0xFF1976D2),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                                Icon(
+                                    imageVector = IconMapper.getIconByName(question.icon),
+                                    contentDescription = null,
+                                    tint = Color(0xFF1976D2),
+                                    modifier = Modifier.size(18.dp)
+                                )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = question.text,
@@ -1400,7 +1415,8 @@ fun SettingsScreen(
     notificationsEnabled: Boolean,
     onRequestNotificationPermission: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenReminderSettings: () -> Unit
+    onOpenReminderSettings: () -> Unit,
+    onNavigateHome: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -1422,6 +1438,8 @@ fun SettingsScreen(
                     val json = inputStream.bufferedReader().use { it.readText() }
                     val success = dataManager.importData(json)
                     if (success) {
+                        showBackupDialog = false
+                        onNavigateHome()
                         Toast.makeText(context, "Backup imported successfully!", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(context, "ERROR: Invalid JSON structure", Toast.LENGTH_LONG).show()
@@ -1443,6 +1461,7 @@ fun SettingsScreen(
                     val data = dataManager.exportData()
                     outputStream.write(data.toByteArray())
                 }
+                showBackupDialog = false
                 Toast.makeText(context, "Backup saved successfully!", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(context, "Failed to save backup: ${e.message}", Toast.LENGTH_LONG).show()
@@ -1586,7 +1605,7 @@ fun SettingsScreen(
                     // 1. Habit Questions
                     SettingItemRow(
                         title = "Habit Questions",
-                        state = "${dataManager.habitData.questions.size} active habits",
+                        state = "${dataManager.habitData.questions.size} total",
                         onClick = {
                             val intent = Intent(context, EditQuestionsActivity::class.java)
                             context.startActivity(intent)
@@ -1932,6 +1951,37 @@ fun ReminderSettingsScreen(
                                 fontSize = 12.sp
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            HabitReminderReceiver.showNotification(context)
+                            Toast.makeText(context, "Test notification sent", Toast.LENGTH_SHORT).show()
+                        },
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF57C00),
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "TEST REMINDER",
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
                     }
 
                     if (!notificationsEnabled) {

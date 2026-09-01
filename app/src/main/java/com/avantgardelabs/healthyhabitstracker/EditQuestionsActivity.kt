@@ -24,9 +24,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import com.avantgardelabs.healthyhabitstracker.ui.EditQuestionScreen
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -206,17 +208,7 @@ fun EditQuestionsContent(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "Active Questions (${questions.size})",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = Color(0xFF263238)
-                    )
-                )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(6.dp))
             }
 
             if (questions.isEmpty()) {
@@ -256,39 +248,39 @@ fun EditQuestionsContent(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .zIndex(if (isDraggingThis) 10f else 0f)
                             .graphicsLayer {
                                 this.translationY = translationY
                                 this.shadowElevation = if (isDraggingThis) 8.dp.toPx() else 0f
                             }
-                            .pointerInput(idx) {
+                            .pointerInput(question.id) {
                                 detectDragGesturesAfterLongPress(
                                     onDragStart = {
-                                        draggedIndex = idx
+                                        draggedIndex = dataManager.habitData.questions.indexOfFirst { it.id == question.id }
                                         dragOffset = 0f
                                     },
                                     onDrag = { change, dragAmount ->
                                         change.consume()
                                         dragOffset += dragAmount.y
 
-                                        val dragged = draggedIndex
-                                        if (dragged != null) {
-                                            val threshold = with(density) { 56.dp.toPx() }
-                                            val targetIndex = if (dragOffset > threshold && dragged < questions.size - 1) {
-                                                dragged + 1
-                                            } else if (dragOffset < -threshold && dragged > 0) {
-                                                dragged - 1
-                                            } else {
-                                                null
-                                            }
-                                            if (targetIndex != null) {
-                                                val mutableList = questions.toMutableList()
-                                                val temp = mutableList[dragged]
-                                                mutableList[dragged] = mutableList[targetIndex]
-                                                mutableList[targetIndex] = temp
-                                                dataManager.updateQuestionsList(mutableList)
-                                                draggedIndex = targetIndex
-                                                dragOffset = 0f
-                                            }
+                                        val dragged = draggedIndex ?: return@detectDragGesturesAfterLongPress
+                                        val currentQuestions = dataManager.habitData.questions
+                                        val threshold = with(density) { 40.dp.toPx() }
+                                        val targetIndex = if (dragOffset > threshold && dragged < currentQuestions.size - 1) {
+                                            dragged + 1
+                                        } else if (dragOffset < -threshold && dragged > 0) {
+                                            dragged - 1
+                                        } else {
+                                            null
+                                        }
+                                        if (targetIndex != null) {
+                                            val mutableList = currentQuestions.toMutableList()
+                                            val temp = mutableList[dragged]
+                                            mutableList[dragged] = mutableList[targetIndex]
+                                            mutableList[targetIndex] = temp
+                                            dataManager.updateQuestionsList(mutableList)
+                                            draggedIndex = targetIndex
+                                            dragOffset = 0f
                                         }
                                     },
                                     onDragEnd = {
@@ -311,29 +303,65 @@ fun EditQuestionsContent(
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DragHandle,
-                                contentDescription = "Drag to reorder",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
-                                    .background(
-                                        Color(0xFFE3F2FD),
-                                        RoundedCornerShape(8.dp)
-                                    ),
+                                    .size(36.dp)
+                                    .pointerInput(question.id) {
+                                        detectDragGestures(
+                                            onDragStart = {
+                                                draggedIndex = dataManager.habitData.questions.indexOfFirst { it.id == question.id }
+                                                dragOffset = 0f
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                dragOffset += dragAmount.y
+
+                                                val dragged = draggedIndex ?: return@detectDragGestures
+                                                val currentQuestions = dataManager.habitData.questions
+                                                val threshold = with(density) { 40.dp.toPx() }
+                                                val targetIndex = if (dragOffset > threshold && dragged < currentQuestions.size - 1) {
+                                                    dragged + 1
+                                                } else if (dragOffset < -threshold && dragged > 0) {
+                                                    dragged - 1
+                                                } else {
+                                                    null
+                                                }
+                                                if (targetIndex != null) {
+                                                    val mutableList = currentQuestions.toMutableList()
+                                                    val temp = mutableList[dragged]
+                                                    mutableList[dragged] = mutableList[targetIndex]
+                                                    mutableList[targetIndex] = temp
+                                                    dataManager.updateQuestionsList(mutableList)
+                                                    draggedIndex = targetIndex
+                                                    dragOffset = 0f
+                                                }
+                                            },
+                                            onDragEnd = {
+                                                draggedIndex = null
+                                                dragOffset = 0f
+                                            },
+                                            onDragCancel = {
+                                                draggedIndex = null
+                                                dragOffset = 0f
+                                            }
+                                        )
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = IconMapper.getIconByName(question.icon),
-                                    contentDescription = null,
-                                    tint = Color(0xFF1976D2),
+                                    imageVector = Icons.Default.DragHandle,
+                                    contentDescription = "Drag to reorder",
+                                    tint = Color.Gray,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = IconMapper.getIconByName(question.icon),
+                                contentDescription = null,
+                                tint = Color(0xFF1976D2),
+                                modifier = Modifier.size(22.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = question.text,

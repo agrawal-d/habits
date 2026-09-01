@@ -26,50 +26,52 @@ class HabitReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun showNotification(context: Context) {
-        val channelId = "habit_reminder_channel"
-        val notificationId = 1002
+    companion object {
+        fun showNotification(context: Context) {
+            val channelId = "habit_reminder_channel"
+            val notificationId = 1002
 
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Habit Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Daily reminders to complete habit questionnaire"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "Habit Reminders",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Daily reminders to complete habit questionnaire"
+                }
+                notificationManager.createNotificationChannel(channel)
             }
-            notificationManager.createNotificationChannel(channel)
-        }
 
-        val todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val contentIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("extra_launch_questionnaire", true)
-            putExtra("extra_date", todayStr)
-        }
+            val todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val contentIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra("extra_launch_questionnaire", true)
+                putExtra("extra_date", todayStr)
+            }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            2002,
-            contentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                2002,
+                contentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
 
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // System standard fallback icon
-            .setContentTitle("Daily Habit Review")
-            .setContentText("Tap to record your habits for today.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
+            val notification = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // System standard fallback icon
+                .setContentTitle("Daily Habit Review")
+                .setContentText("Tap to record your habits for today.")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
 
-        try {
-            notificationManager.notify(notificationId, notification)
-        } catch (e: SecurityException) {
-            e.printStackTrace()
+            try {
+                notificationManager.notify(notificationId, notification)
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
         }
     }
 }

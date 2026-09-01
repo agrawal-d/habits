@@ -221,7 +221,7 @@ fun EditQuestionScreen(
                 ),
                 placeholder = {
                     Text(
-                        "Meditate for 10 minutes",
+                        "Went to sleep on time",
                         color = Color.Gray,
                         fontSize = 14.sp
                     )
