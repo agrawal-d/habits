@@ -1,6 +1,7 @@
 package com.avantgardelabs.healthyhabitstracker.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -13,7 +14,7 @@ object IconMapper {
         "gym" to Icons.Default.FitnessCenter,
         "water" to Icons.Default.WaterDrop,
         "book" to Icons.Default.Book,
-        "walk" to Icons.Default.DirectionsWalk,
+        "walk" to Icons.AutoMirrored.Filled.DirectionsWalk,
         "check" to Icons.Default.Check
     )
 

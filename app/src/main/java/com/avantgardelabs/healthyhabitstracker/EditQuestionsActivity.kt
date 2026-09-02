@@ -114,7 +114,7 @@ fun EditQuestionsContent(
     }
 
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
-    var dragOffset by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
     val questions = dataManager.habitData.questions
 

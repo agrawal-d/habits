@@ -52,19 +52,19 @@ fun OnboardingScreen(
     onFinished: (List<Question>, hour: Int, minute: Int) -> Unit,
     onRestoreBackup: (String) -> Boolean
 ) {
-    var pageIndex by remember { mutableStateOf(0) }
+    var pageIndex by remember { mutableIntStateOf(0) }
 
     // Page 1 data: questions list
     val questions = remember { mutableStateListOf<Question>() }
     var editingQuestionIndex by remember { mutableStateOf<Int?>(null) }
     var isAddingQuestion by remember { mutableStateOf(false) }
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
-    var dragOffset by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
 
     // Page 2 data: reminder time
-    var reminderHour by remember { mutableStateOf(21) } // 9 PM
-    var reminderMinute by remember { mutableStateOf(0) }
+    var reminderHour by remember { mutableIntStateOf(21) } // 9 PM
+    var reminderMinute by remember { mutableIntStateOf(0) }
 
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
