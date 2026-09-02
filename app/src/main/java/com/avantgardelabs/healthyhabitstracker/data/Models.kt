@@ -156,7 +156,9 @@ data class HabitData(
     val questions: List<Question> = emptyList(),
     val logs: List<LogEntry> = emptyList(),
     val reminder: ReminderSettings = ReminderSettings(),
-    val theme: String = "green"
+    val theme: String = "green",
+    val launchCount: Int = 0,
+    val hasPromptedRating: Boolean = false
 ) {
     fun toJsonObject(): JSONObject {
         val obj = JSONObject()
@@ -171,6 +173,8 @@ data class HabitData(
 
         obj.put("reminder", reminder.toJsonObject())
         obj.put("theme", theme)
+        obj.put("launchCount", launchCount)
+        obj.put("hasPromptedRating", hasPromptedRating)
 
         return obj
     }
@@ -200,8 +204,10 @@ data class HabitData(
             }
 
             val theme = obj.optString("theme", "green")
+            val launchCount = obj.optInt("launchCount", 0)
+            val hasPromptedRating = obj.optBoolean("hasPromptedRating", false)
 
-            return HabitData(questionsList, logsList, reminder, theme)
+            return HabitData(questionsList, logsList, reminder, theme, launchCount, hasPromptedRating)
         }
     }
 }

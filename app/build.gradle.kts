@@ -13,13 +13,14 @@ fun fetchGitCommitHash(): String {
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
         process.inputStream.bufferedReader().readText().trim()
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         "unknown"
     }
 }
 
 val gitCommit = fetchGitCommitHash()
-val buildDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+val buildDate: String? = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+val epochTime = (System.currentTimeMillis() / 1000).toInt()
 
 android {
     namespace = "com.avantgardelabs.healthyhabitstracker"
@@ -29,8 +30,8 @@ android {
         applicationId = "com.avantgardelabs.healthyhabitstracker"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = epochTime
+        versionName = "$epochTime.0"
 
         buildConfigField("String", "GIT_COMMIT", "\"$gitCommit\"")
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
@@ -80,6 +81,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.play.review.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

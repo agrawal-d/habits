@@ -281,6 +281,7 @@ fun SettingsScreen(
         item {
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Main Settings Panel
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp),
@@ -319,7 +320,26 @@ fun SettingsScreen(
                         onClick = { showBackupDialog = true }
                     )
 
-                    // 5. License
+                    // 4. Reset App Data
+                    SettingItemRow(
+                        title = "Reset App Data",
+                        onClick = { resetConfirmShow = true },
+                        showDivider = false
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // App Info & Links Panel
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // 1. License
                     SettingItemRow(
                         title = "License",
                         onClick = {
@@ -328,7 +348,7 @@ fun SettingsScreen(
                         }
                     )
 
-                    // 6. Report a Bug
+                    // 2. Report a Bug
                     SettingItemRow(
                         title = "Report a Bug",
                         onClick = {
@@ -341,14 +361,20 @@ fun SettingsScreen(
                         }
                     )
 
-                    // 7. Reset App Data
+                    // 3. Rate App
                     SettingItemRow(
-                        title = "Reset App Data",
-                        onClick = { resetConfirmShow = true },
-                        showDivider = true
+                        title = "Rate App",
+                        onClick = {
+                            val activity = RatingHelper.findActivity(context)
+                            if (activity != null) {
+                                RatingHelper.launchReviewFlow(activity, fallbackToStoreOnFailure = true)
+                            } else {
+                                RatingHelper.openStorePage(context)
+                            }
+                        }
                     )
 
-                    // 8. Source Code
+                    // 4. Source Code
                     SettingItemRow(
                         title = "Source Code",
                         onClick = {

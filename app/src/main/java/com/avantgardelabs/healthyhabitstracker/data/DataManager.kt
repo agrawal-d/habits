@@ -92,6 +92,18 @@ class DataManager(private val context: Context) {
         load()
     }
 
+    fun incrementLaunchCount(): Int {
+        val newCount = habitData.launchCount + 1
+        habitData = habitData.copy(launchCount = newCount)
+        save()
+        return newCount
+    }
+
+    fun markRatingPrompted() {
+        habitData = habitData.copy(hasPromptedRating = true)
+        save()
+    }
+
     fun clearAllData() {
         habitData = HabitData()
         save()

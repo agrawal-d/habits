@@ -26,6 +26,7 @@ import com.avantgardelabs.healthyhabitstracker.data.ReminderScheduler
 import com.avantgardelabs.healthyhabitstracker.data.ReminderSettings
 import com.avantgardelabs.healthyhabitstracker.ui.MainScreen
 import com.avantgardelabs.healthyhabitstracker.ui.OnboardingScreen
+import com.avantgardelabs.healthyhabitstracker.ui.RatingHelper
 import com.avantgardelabs.healthyhabitstracker.ui.theme.HealthyHabitsTrackerTheme
 import java.time.LocalDate
 
@@ -140,6 +141,16 @@ class MainActivity : ComponentActivity() {
                                     reminder.minute,
                                     true
                                 )
+                            }
+
+                            // Track app usage and prompt for rating after 10 uses
+                            val launchCount = dataManager.incrementLaunchCount()
+                            if (launchCount >= 10 && !dataManager.habitData.hasPromptedRating) {
+                                dataManager.markRatingPrompted()
+                                val activity = RatingHelper.findActivity(context)
+                                if (activity != null) {
+                                    RatingHelper.launchReviewFlow(activity, fallbackToStoreOnFailure = false)
+                                }
                             }
                         }
 
