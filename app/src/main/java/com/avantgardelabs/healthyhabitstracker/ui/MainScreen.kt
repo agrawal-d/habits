@@ -798,7 +798,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "CHECK IN TODAY",
+                                    text = "Start",
                                     fontFamily = FontFamily.SansSerif,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp
@@ -810,7 +810,7 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "TODAY",
                                         style = TextStyle(
@@ -822,26 +822,39 @@ fun HomeScreen(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "${todayLog.getScaledScore()}%",
+                                        text = "You recorded today's habits",
                                         style = TextStyle(
                                             fontFamily = FontFamily.SansSerif,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 28.sp,
-                                            color = Color(0xFF0D47A1)
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF263238)
                                         )
                                     )
                                 }
 
-                                IconButton(
-                                    onClick = { onAnswerDate(todayStr) },
-                                    modifier = Modifier.size(36.dp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit today's log",
-                                        tint = Color(0xFF1976D2),
-                                        modifier = Modifier.size(20.dp)
+                                    Text(
+                                        text = "${todayLog.getScaledScore()}%",
+                                        style = TextStyle(
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 22.sp,
+                                            color = Color(0xFF0D47A1)
+                                        )
                                     )
+                                    IconButton(
+                                        onClick = { onAnswerDate(todayStr) },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit today's log",
+                                            tint = Color(0xFF1976D2),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

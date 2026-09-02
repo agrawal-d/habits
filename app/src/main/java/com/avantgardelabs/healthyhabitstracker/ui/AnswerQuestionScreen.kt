@@ -87,26 +87,16 @@ fun AnswerQuestionScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = formattedDate,
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = Color.White
-                            )
-                        )
-                        val answeredCount = questions.count { answers.containsKey(it.id) }
-                        Text(
-                            text = "$answeredCount of ${questions.size} answered",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.85f)
-                            )
-                        )
-                    }
+                    Text(
+                        text = formattedDate,
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color.White
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         },
