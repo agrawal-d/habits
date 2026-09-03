@@ -1,7 +1,6 @@
 package com.avantgardelabs.healthyhabitstracker
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -35,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -76,8 +74,6 @@ fun EditQuestionsContent(
     dataManager: DataManager,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
-
     var editingQuestion by remember { mutableStateOf<Question?>(null) }
     var isAddingQuestion by remember { mutableStateOf(false) }
 
@@ -88,7 +84,6 @@ fun EditQuestionsContent(
             onSave = { newQuestion ->
                 dataManager.addQuestion(newQuestion)
                 isAddingQuestion = false
-                Toast.makeText(context, "Habit added", Toast.LENGTH_SHORT).show()
             },
             onCancel = {
                 isAddingQuestion = false
@@ -104,7 +99,6 @@ fun EditQuestionsContent(
             onSave = { updated ->
                 dataManager.updateQuestion(updated)
                 editingQuestion = null
-                Toast.makeText(context, "Habit updated", Toast.LENGTH_SHORT).show()
             },
             onCancel = {
                 editingQuestion = null
@@ -389,7 +383,6 @@ fun EditQuestionsContent(
                             IconButton(
                                 onClick = {
                                     dataManager.deleteQuestion(question.id)
-                                    Toast.makeText(context, "Habit deleted", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.size(44.dp)
                             ) {

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -201,7 +200,6 @@ fun MainScreen(
                 )
                 dataManager.saveLogEntry(newEntry)
                 editingDate = null
-                Toast.makeText(context, "Log saved", Toast.LENGTH_SHORT).show()
             },
             onCancel = {
                 editingDate = null
@@ -240,7 +238,6 @@ fun MainScreen(
                     onClick = {
                         deleteConfirmDate?.let { dataManager.deleteLogEntry(it) }
                         deleteConfirmDate = null
-                        Toast.makeText(context, "Entry deleted", Toast.LENGTH_SHORT).show()
                     }
                 ) {
                     Text("DELETE", color = Color(0xFFD32F2F), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)

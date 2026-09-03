@@ -243,7 +243,7 @@ fun EditQuestionScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = "Each question will have 3 answer options: Yes, Partially, and No.",
+                text = "Each question will have 3 answer options\n• Yes\n• Partially\n• No",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 13.sp,
@@ -252,10 +252,10 @@ fun EditQuestionScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Examples:\n• \"Woke up on time\"\n• \"Ate healthy lunch\"\n• \"Excercised for 45 mins\"",
+                text = "Examples questions\n• \"Woke up on time\"\n• \"Ate healthy lunch\"\n• \"Excercised for 45 mins\"",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 13.sp,

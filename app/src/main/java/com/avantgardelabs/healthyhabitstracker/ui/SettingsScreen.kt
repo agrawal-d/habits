@@ -2,7 +2,6 @@ package com.avantgardelabs.healthyhabitstracker.ui
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
@@ -126,13 +125,9 @@ fun SettingsScreen(
                     if (success) {
                         showBackupDialog = false
                         onNavigateHome()
-                        Toast.makeText(context, "Backup imported successfully!", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "ERROR: Invalid JSON structure", Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Failed to read file: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -148,9 +143,7 @@ fun SettingsScreen(
                     outputStream.write(data.toByteArray())
                 }
                 showBackupDialog = false
-                Toast.makeText(context, "Backup saved successfully!", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "Failed to save backup: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -257,7 +250,6 @@ fun SettingsScreen(
                     onClick = {
                         dataManager.clearAllData()
                         resetConfirmShow = false
-                        Toast.makeText(context, "App cleared successfully!", Toast.LENGTH_SHORT).show()
                     }
                 ) {
                     Text("RESET ALL DATA", color = Color(0xFFD32F2F), fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -355,8 +347,7 @@ fun SettingsScreen(
                             try {
                                 val intent = Intent(Intent.ACTION_VIEW, "https://github.com/agrawal-d/habits/issues".toUri())
                                 context.startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Cannot open issues page", Toast.LENGTH_SHORT).show()
+                            } catch (_: Exception) {
                             }
                         }
                     )
@@ -381,8 +372,7 @@ fun SettingsScreen(
                             try {
                                 val intent = Intent(Intent.ACTION_VIEW, "https://github.com/agrawal-d/habits".toUri())
                                 context.startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Cannot open GitHub page", Toast.LENGTH_SHORT).show()
+                            } catch (_: Exception) {
                             }
                         },
                         showDivider = false
@@ -423,8 +413,30 @@ fun SettingsScreen(
                                 "https://www.flaticon.com/packs/essential-collection".toUri()
                             )
                             context.startActivity(intent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
+                        } catch (_: Exception) {
+                        }
+                    }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "App Icon by icons8.com",
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 12.sp,
+                    color = Color(0xFF1976D2),
+                    textAlign = TextAlign.Center,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        try {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                "https://icons8.com".toUri()
+                            )
+                            context.startActivity(intent)
+                        } catch (_: Exception) {
                         }
                     }
             )

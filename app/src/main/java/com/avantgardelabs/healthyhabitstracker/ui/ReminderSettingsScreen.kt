@@ -1,7 +1,6 @@
 package com.avantgardelabs.healthyhabitstracker.ui
 
 import android.app.TimePickerDialog
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -95,19 +94,7 @@ fun ReminderSettingsScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "Daily Habit Reminder",
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = Color(0xFF263238)
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Receive daily notifications to record your habits and maintain momentum.",
+                            text = "Enable daily reminders so you don't forget to record.",
                             style = TextStyle(
                                 fontFamily = FontFamily.SansSerif,
                                 fontSize = 13.sp,
@@ -151,7 +138,7 @@ fun ReminderSettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (isEnabled) "Notifications arrive daily" else "Reminders are disabled",
+                                text = if (isEnabled) "Enabled" else "Disabled",
                                 style = TextStyle(
                                     fontFamily = FontFamily.SansSerif,
                                     fontSize = 13.sp,
@@ -166,11 +153,6 @@ fun ReminderSettingsScreen(
                                 isEnabled = checked
                                 dataManager.updateReminder(ReminderSettings(reminder.hour, reminder.minute, checked))
                                 ReminderScheduler.scheduleReminder(context, reminder.hour, reminder.minute, checked)
-                                Toast.makeText(
-                                    context,
-                                    if (checked) "Daily reminder enabled" else "Daily reminder disabled",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
                         )
                     }
@@ -215,7 +197,6 @@ fun ReminderSettingsScreen(
                                     { _, h, m ->
                                         dataManager.updateReminder(ReminderSettings(h, m, isEnabled))
                                         ReminderScheduler.scheduleReminder(context, h, m, isEnabled)
-                                        Toast.makeText(context, "Reminder time updated", Toast.LENGTH_SHORT).show()
                                     },
                                     reminder.hour,
                                     reminder.minute,
@@ -250,7 +231,6 @@ fun ReminderSettingsScreen(
                     Button(
                         onClick = {
                             HabitReminderReceiver.showNotification(context)
-                            Toast.makeText(context, "Test notification sent", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(4.dp),
                         colors = ButtonDefaults.buttonColors(

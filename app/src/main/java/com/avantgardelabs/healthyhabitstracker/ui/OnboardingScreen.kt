@@ -2,7 +2,6 @@ package com.avantgardelabs.healthyhabitstracker.ui
 
 import android.app.TimePickerDialog
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -129,13 +128,9 @@ fun OnboardingScreen(
                         stagedBackupData = parsedData
                         isRestoringBackup = true
                         pageIndex = 2 // Skip habit setup and go straight to notification setup
-                        Toast.makeText(context, "Backup loaded! Please complete notification & reminder setup.", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "ERROR: Invalid JSON structure", Toast.LENGTH_LONG).show()
                     }
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Failed to read file: ${e.message}", Toast.LENGTH_LONG).show()
+            } catch (_: Exception) {
             }
         }
     }
@@ -906,7 +901,6 @@ fun OnboardingScreen(
                                 Button(
                                     onClick = {
                                         HabitReminderReceiver.showNotification(context)
-                                        Toast.makeText(context, "Test notification sent", Toast.LENGTH_SHORT).show()
                                     },
                                     shape = RoundedCornerShape(4.dp),
                                     colors = ButtonDefaults.buttonColors(

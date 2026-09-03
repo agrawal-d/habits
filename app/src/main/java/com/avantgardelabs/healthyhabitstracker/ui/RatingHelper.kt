@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import com.google.android.play.core.review.ReviewManagerFactory
 
 object RatingHelper {
@@ -71,8 +70,7 @@ object RatingHelper {
             }
             try {
                 context.startActivity(webIntent)
-            } catch (ex: Exception) {
-                Toast.makeText(context, "Unable to open Play Store", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
             }
         }
     }
