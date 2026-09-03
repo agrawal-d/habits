@@ -71,12 +71,12 @@ jobs:
           build_date=$(date -u +'%a %b %-d %H:%M:%S UTC %Y')
 
           echo "This release is automatically updated on every commit to the main branch." > release_notes.txt
-          echo ">> " >> release_notes.txt
-          echo ">> Latest Build Info:" >> release_notes.txt
-          echo ">> " >> release_notes.txt
-          echo ">>     Commit: ${{ env.COMMIT_SHA }}" >> release_notes.txt
-          echo ">>     Message: $commit_msg" >> release_notes.txt
-          echo ">>     Date: $build_date" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "Latest Build Info:" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "Commit: ${{ env.COMMIT_SHA }}" >> release_notes.txt
+          echo "Message: $commit_msg" >> release_notes.txt
+          echo "Date: $build_date" >> release_notes.txt
 
           gh release edit latest-build \
             --title "Latest Build" \
