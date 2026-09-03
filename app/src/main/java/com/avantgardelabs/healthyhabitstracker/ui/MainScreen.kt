@@ -11,8 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,49 +46,58 @@ fun NotificationBlockerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(28.dp),
+            .padding(20.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            shape = RoundedCornerShape(4.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = "Warning",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(Color(0xFFFFEBEE), RoundedCornerShape(4.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsActive,
+                        contentDescription = "Notification Required",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
                     text = "Notification Permission Required",
                     style = TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+                        fontSize = 18.sp,
+                        color = Color(0xFF263238)
                     ),
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Habit tracking relies on structured daily reminders. To use this app, enable notification permissions.",
+                    text = "Healthy Habits Tracker relies on structured daily reminders so you never forget to log your habits. Enable notification permissions to continue.",
                     style = TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 13.sp,
-                        color = Color.Gray,
-                        lineHeight = 18.sp
+                        color = Color(0xFF546E7A),
+                        lineHeight = 19.sp
                     ),
                     textAlign = TextAlign.Center
                 )
@@ -98,15 +106,22 @@ fun NotificationBlockerScreen(
 
                 Button(
                     onClick = onRequestPermission,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(4.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = Color(0xFF4CAF50),
                         contentColor = Color.White
                     ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     modifier = Modifier.fillMaxWidth().height(44.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "Grant Permission",
+                        "GRANT PERMISSION",
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
@@ -117,15 +132,22 @@ fun NotificationBlockerScreen(
 
                 Button(
                     onClick = onOpenSettings,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(4.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.DarkGray,
+                        containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = Color.White
                     ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     modifier = Modifier.fillMaxWidth().height(44.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "Open Settings",
+                        "OPEN APP SETTINGS",
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp

@@ -109,6 +109,11 @@ class DataManager(private val context: Context) {
         save()
     }
 
+    fun saveHabitData(data: HabitData) {
+        habitData = data
+        save()
+    }
+
     fun exportData(): String {
         return habitData.toJsonObject().toString(2)
     }

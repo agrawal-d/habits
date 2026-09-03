@@ -98,9 +98,12 @@ class MainActivity : ComponentActivity() {
                                     notificationsEnabled = checkNotificationPermission()
                                 }
                             },
+                            onOpenSettings = {
+                                com.avantgardelabs.healthyhabitstracker.ui.openAppSettings(context)
+                            },
                             onFinished = { onboardingQuestions, hour, minute ->
                                 dataManager.updateQuestionsList(onboardingQuestions)
-                                
+
                                 // Save and schedule reminder selected in onboarding
                                 dataManager.updateReminder(ReminderSettings(hour, minute, true))
                                 ReminderScheduler.scheduleReminder(
@@ -109,13 +112,31 @@ class MainActivity : ComponentActivity() {
                                     minute,
                                     true
                                 )
-                                
+
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 }
                             },
-                            onRestoreBackup = { json ->
-                                dataManager.importData(json)
+                            onFinishedWithBackup = { habitData ->
+                                dataManager.saveHabitData(habitData)
+                                ReminderScheduler.scheduleReminder(
+                                    context,
+                                    habitData.reminder.hour,
+                                    habitData.reminder.minute,
+                                    habitData.reminder.enabled
+                                )
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            },
+                            onParseBackup = { json ->
+                                try {
+                                    com.avantgardelabs.healthyhabitstracker.data.HabitData.fromJsonObject(org.json.JSONObject(json))
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    null
+                                }
                             }
                         )
                     } else {

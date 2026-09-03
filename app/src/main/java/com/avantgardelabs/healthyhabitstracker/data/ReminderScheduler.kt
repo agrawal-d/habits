@@ -1,13 +1,16 @@
 package com.avantgardelabs.healthyhabitstracker.data
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.RequiresPermission
 import com.avantgardelabs.healthyhabitstracker.receiver.HabitReminderReceiver
 import java.util.Calendar
 
 object ReminderScheduler {
+    @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     fun scheduleReminder(context: Context, hour: Int, minute: Int, enabled: Boolean) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, HabitReminderReceiver::class.java)
@@ -39,7 +42,7 @@ object ReminderScheduler {
                 calendar.timeInMillis,
                 pendingIntent
             )
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 calendar.timeInMillis,

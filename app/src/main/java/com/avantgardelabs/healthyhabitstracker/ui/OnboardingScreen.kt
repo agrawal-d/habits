@@ -43,16 +43,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.avantgardelabs.healthyhabitstracker.R
+import com.avantgardelabs.healthyhabitstracker.data.HabitData
 import com.avantgardelabs.healthyhabitstracker.data.Question
+import com.avantgardelabs.healthyhabitstracker.data.ReminderSettings
 
 @Composable
 fun OnboardingScreen(
     notificationsEnabled: Boolean,
     onRequestNotificationPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
     onFinished: (List<Question>, hour: Int, minute: Int) -> Unit,
-    onRestoreBackup: (String) -> Boolean
+    onFinishedWithBackup: (HabitData) -> Unit,
+    onParseBackup: (String) -> HabitData?
 ) {
     var pageIndex by remember { mutableIntStateOf(0) }
+    var isRestoringBackup by remember { mutableStateOf(false) }
+    var stagedBackupData by remember { mutableStateOf<HabitData?>(null) }
 
     // Page 1 data: questions list
     val questions = remember { mutableStateListOf<Question>() }
@@ -62,7 +68,7 @@ fun OnboardingScreen(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
 
-    // Page 2 data: reminder time
+    // Page 3 data: reminder time
     var reminderHour by remember { mutableIntStateOf(21) } // 9 PM
     var reminderMinute by remember { mutableIntStateOf(0) }
 
@@ -70,7 +76,13 @@ fun OnboardingScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     BackHandler(enabled = pageIndex > 0) {
-        pageIndex--
+        if (pageIndex == 2 && isRestoringBackup) {
+            pageIndex = 0
+            isRestoringBackup = false
+            stagedBackupData = null
+        } else {
+            pageIndex--
+        }
     }
 
     if (isAddingQuestion) {
@@ -112,9 +124,12 @@ fun OnboardingScreen(
             try {
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     val json = inputStream.bufferedReader().use { it.readText() }
-                    val success = onRestoreBackup(json)
-                    if (success) {
-                        Toast.makeText(context, "Backup restored successfully!", Toast.LENGTH_SHORT).show()
+                    val parsedData = onParseBackup(json)
+                    if (parsedData != null) {
+                        stagedBackupData = parsedData
+                        isRestoringBackup = true
+                        pageIndex = 2 // Skip habit setup and go straight to notification setup
+                        Toast.makeText(context, "Backup loaded! Please complete notification & reminder setup.", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(context, "ERROR: Invalid JSON structure", Toast.LENGTH_LONG).show()
                     }
@@ -145,7 +160,15 @@ fun OnboardingScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (pageIndex > 0) {
-                        IconButton(onClick = { pageIndex-- }) {
+                        IconButton(onClick = {
+                            if (pageIndex == 2 && isRestoringBackup) {
+                                pageIndex = 0
+                                isRestoringBackup = false
+                                stagedBackupData = null
+                            } else {
+                                pageIndex--
+                            }
+                        }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
@@ -160,6 +183,7 @@ fun OnboardingScreen(
                         text = when (pageIndex) {
                             0 -> "Healthy Habits Tracker"
                             1 -> "Setup Habits"
+                            2 -> "Enable Notifications"
                             else -> "Daily Reminder"
                         },
                         style = TextStyle(
@@ -248,7 +272,65 @@ fun OnboardingScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             OutlinedButton(
-                                onClick = { pageIndex = 1 },
+                                onClick = {
+                                    if (isRestoringBackup) {
+                                        pageIndex = 0
+                                        isRestoringBackup = false
+                                        stagedBackupData = null
+                                    } else {
+                                        pageIndex = 1
+                                    }
+                                },
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Text(
+                                    "BACK",
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+
+                            Button(
+                                onClick = { pageIndex = 3 },
+                                enabled = notificationsEnabled,
+                                shape = RoundedCornerShape(4.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = Color.White
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Text(
+                                    "NEXT",
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+                3 -> {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color.White,
+                        shadowElevation = 4.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { pageIndex = 2 },
                                 shape = RoundedCornerShape(4.dp),
                                 modifier = Modifier
                                     .weight(1f)
@@ -264,10 +346,14 @@ fun OnboardingScreen(
 
                             Button(
                                 onClick = {
-                                    if (!notificationsEnabled) {
-                                        onRequestNotificationPermission()
+                                    if (stagedBackupData != null) {
+                                        val updatedData = stagedBackupData!!.copy(
+                                            reminder = ReminderSettings(reminderHour, reminderMinute, true)
+                                        )
+                                        onFinishedWithBackup(updatedData)
+                                    } else {
+                                        onFinished(questions.toList(), reminderHour, reminderMinute)
                                     }
-                                    onFinished(questions.toList(), reminderHour, reminderMinute)
                                 },
                                 shape = RoundedCornerShape(4.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -600,7 +686,116 @@ fun OnboardingScreen(
                 }
 
                 2 -> {
-                    // Page 2: Daily Reminder Setup
+                    // Page 2: Mandatory Notification Permission Step
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .background(
+                                            if (notificationsEnabled) Color(0xFFE8F5E9) else Color(0xFFE3F2FD),
+                                            RoundedCornerShape(4.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = "Notifications",
+                                        tint = if (notificationsEnabled) Color(0xFF4CAF50) else Color(0xFF1976D2),
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(18.dp))
+
+                                Text(
+                                    text = if (notificationsEnabled) "Notifications Enabled" else "Enable Daily Notifications",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.SansSerif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = Color(0xFF263238)
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+
+                                if (!notificationsEnabled) {
+                                    Spacer(modifier = Modifier.height(24.dp))
+
+                                    Button(
+                                        onClick = onRequestNotificationPermission,
+                                        shape = RoundedCornerShape(4.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF4CAF50),
+                                            contentColor = Color.White
+                                        ),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "GRANT PERMISSION",
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Button(
+                                        onClick = onOpenSettings,
+                                        shape = RoundedCornerShape(4.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = Color.White
+                                        ),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Settings,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "OPEN APP SETTINGS",
+                                            fontFamily = FontFamily.SansSerif,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                3 -> {
+                    // Page 3: Daily Reminder Setup
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
